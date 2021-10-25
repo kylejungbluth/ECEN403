@@ -35,6 +35,12 @@ class Feedback():
         self.magnesium = self.nutrient_model.magnesium
         self.calcium = self.nutrient_model.calcium
         self.phosphorous = self.nutrient_model.phosphorus
+
+        self.current_ammonium = 0
+        self.current_magnesium = 0
+        self.current_calcium = 0
+        self.current_phosphorous = 0
+
         self.update_model()
         print("Current model: " + self.model.name)
 
@@ -70,10 +76,10 @@ class Feedback():
         Requires: N/A
     '''
     def get_ammonium(self):
-        return 1
+        return self.current_ammonium
 
     def get_magnesium(self):
-        return 1
+        return self.current_magnesium
 
     def get_calcium(self):
         return 1
@@ -86,22 +92,22 @@ class Feedback():
         Requires: Sensor output WIP
     '''
     def sensor1(self):
-        nutrient = self.get_ammonium()
-        if (nutrient < self.ammonium):
+        if (self.current_ammonium < self.ammonium):
             #actuator1.release()
-            print("Nutrient Level: ", nutrient, "ML Level: ", self.ammonium, "Release ammonium")
+            self.current_ammonium += .5
+            print("Nutrient Level: ", round(self.current_ammonium, 2), "ML Level: ", round(self.ammonium, 2), "Release ammonium")
             pass
         else:
-            print("Nutrient Level: ", nutrient, "ML Level: ", self.ammonium, "Don't release ammonium")
+            print("Nutrient Level: ", round(self.current_ammonium, 2) , "ML Level: ", round(self.ammonium, 2), "Don't release ammonium")
         pass
 
     def sensor2(self):
-        nutrient = self.get_magnesium()
-        if (nutrient < self.magnesium):
+        if (self.current_magnesium < self.magnesium):
             # actuator2.release()
-            print("Nutrient Level: ", nutrient, "ML Level: ", self.magnesium, "Release magnesium")
+            self.current_magnesium += .5
+            print("Nutrient Level: ", round(self.current_magnesium, 2), "ML Level: ", round(self.magnesium, 2), "Release magnesium")
         else:
-            print("Nutrient Level: ", nutrient, "ML Level: ", self.ammonium, "Don't release magnesium")
+            print("Nutrient Level: ", round(self.current_magnesium, 2), "ML Level: ", round(self.ammonium, 2), "Don't release magnesium")
 
         pass
     def sensor3(self):
@@ -117,6 +123,12 @@ class Feedback():
             pass
         pass
 
+    def nutrient_absoption(self):
+        self.current_ammonium -= .05
+        self.current_magnesium -= .05
+        self.current_calcium -= .05
+        self.current_phosphorous -= .05
+
     '''
         Looping mechanism with 2 second pause before read
         Requires: everything else to work
@@ -125,6 +137,7 @@ class Feedback():
         print("Running Loop")
         while(True):
             time.sleep(2)
+            self.nutrient_absoption()
             rand = random.randint(0, 1)
             print("Machine Model Output: ", rand)
             self.updateML(rand)
