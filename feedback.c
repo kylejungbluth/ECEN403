@@ -923,21 +923,6 @@ static CYTHON_INLINE int __Pyx_PyObject_SetAttrStr(PyObject* obj, PyObject* attr
 #define __Pyx_PyObject_SetAttrStr(o,n,v) PyObject_SetAttr(o,n,v)
 #endif
 
-/* RaiseArgTupleInvalid.proto */
-static void __Pyx_RaiseArgtupleInvalid(const char* func_name, int exact,
-    Py_ssize_t num_min, Py_ssize_t num_max, Py_ssize_t num_found);
-
-/* RaiseDoubleKeywords.proto */
-static void __Pyx_RaiseDoubleKeywordsError(const char* func_name, PyObject* kw_name);
-
-/* ParseKeywords.proto */
-static int __Pyx_ParseOptionalKeywords(PyObject *kwds, PyObject **argnames[],\
-    PyObject *kwds2, PyObject *values[], Py_ssize_t num_pos_args,\
-    const char* function_name);
-
-/* PyIntCompare.proto */
-static CYTHON_INLINE PyObject* __Pyx_PyInt_EqObjC(PyObject *op1, PyObject *op2, long intval, long inplace);
-
 /* PyDictVersioning.proto */
 #if CYTHON_USE_DICT_VERSIONS && CYTHON_USE_TYPE_SLOTS
 #define __PYX_DICT_VERSION_INIT  ((PY_UINT64_T) -1)
@@ -984,6 +969,92 @@ static PyObject *__Pyx__GetModuleGlobalName(PyObject *name, PY_UINT64_T *dict_ve
 #define __Pyx_GetModuleGlobalNameUncached(var, name)  (var) = __Pyx__GetModuleGlobalName(name)
 static CYTHON_INLINE PyObject *__Pyx__GetModuleGlobalName(PyObject *name);
 #endif
+
+/* PyFunctionFastCall.proto */
+#if CYTHON_FAST_PYCALL
+#define __Pyx_PyFunction_FastCall(func, args, nargs)\
+    __Pyx_PyFunction_FastCallDict((func), (args), (nargs), NULL)
+#if 1 || PY_VERSION_HEX < 0x030600B1
+static PyObject *__Pyx_PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs, PyObject *kwargs);
+#else
+#define __Pyx_PyFunction_FastCallDict(func, args, nargs, kwargs) _PyFunction_FastCallDict(func, args, nargs, kwargs)
+#endif
+#define __Pyx_BUILD_ASSERT_EXPR(cond)\
+    (sizeof(char [1 - 2*!(cond)]) - 1)
+#ifndef Py_MEMBER_SIZE
+#define Py_MEMBER_SIZE(type, member) sizeof(((type *)0)->member)
+#endif
+  static size_t __pyx_pyframe_localsplus_offset = 0;
+  #include "frameobject.h"
+  #define __Pxy_PyFrame_Initialize_Offsets()\
+    ((void)__Pyx_BUILD_ASSERT_EXPR(sizeof(PyFrameObject) == offsetof(PyFrameObject, f_localsplus) + Py_MEMBER_SIZE(PyFrameObject, f_localsplus)),\
+     (void)(__pyx_pyframe_localsplus_offset = ((size_t)PyFrame_Type.tp_basicsize) - Py_MEMBER_SIZE(PyFrameObject, f_localsplus)))
+  #define __Pyx_PyFrame_GetLocalsplus(frame)\
+    (assert(__pyx_pyframe_localsplus_offset), (PyObject **)(((char *)(frame)) + __pyx_pyframe_localsplus_offset))
+#endif
+
+/* PyObjectCall.proto */
+#if CYTHON_COMPILING_IN_CPYTHON
+static CYTHON_INLINE PyObject* __Pyx_PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw);
+#else
+#define __Pyx_PyObject_Call(func, arg, kw) PyObject_Call(func, arg, kw)
+#endif
+
+/* PyObjectCallMethO.proto */
+#if CYTHON_COMPILING_IN_CPYTHON
+static CYTHON_INLINE PyObject* __Pyx_PyObject_CallMethO(PyObject *func, PyObject *arg);
+#endif
+
+/* PyObjectCallNoArg.proto */
+#if CYTHON_COMPILING_IN_CPYTHON
+static CYTHON_INLINE PyObject* __Pyx_PyObject_CallNoArg(PyObject *func);
+#else
+#define __Pyx_PyObject_CallNoArg(func) __Pyx_PyObject_Call(func, __pyx_empty_tuple, NULL)
+#endif
+
+/* PyCFunctionFastCall.proto */
+#if CYTHON_FAST_PYCCALL
+static CYTHON_INLINE PyObject *__Pyx_PyCFunction_FastCall(PyObject *func, PyObject **args, Py_ssize_t nargs);
+#else
+#define __Pyx_PyCFunction_FastCall(func, args, nargs)  (assert(0), NULL)
+#endif
+
+/* PyObjectCallOneArg.proto */
+static CYTHON_INLINE PyObject* __Pyx_PyObject_CallOneArg(PyObject *func, PyObject *arg);
+
+/* RaiseArgTupleInvalid.proto */
+static void __Pyx_RaiseArgtupleInvalid(const char* func_name, int exact,
+    Py_ssize_t num_min, Py_ssize_t num_max, Py_ssize_t num_found);
+
+/* RaiseDoubleKeywords.proto */
+static void __Pyx_RaiseDoubleKeywordsError(const char* func_name, PyObject* kw_name);
+
+/* ParseKeywords.proto */
+static int __Pyx_ParseOptionalKeywords(PyObject *kwds, PyObject **argnames[],\
+    PyObject *kwds2, PyObject *values[], Py_ssize_t num_pos_args,\
+    const char* function_name);
+
+/* PyIntCompare.proto */
+static CYTHON_INLINE PyObject* __Pyx_PyInt_EqObjC(PyObject *op1, PyObject *op2, long intval, long inplace);
+
+/* PyFloatBinop.proto */
+#if !CYTHON_COMPILING_IN_PYPY
+static PyObject* __Pyx_PyFloat_AddObjC(PyObject *op1, PyObject *op2, double floatval, int inplace, int zerodivision_check);
+#else
+#define __Pyx_PyFloat_AddObjC(op1, op2, floatval, inplace, zerodivision_check)\
+    (inplace ? PyNumber_InPlaceAdd(op1, op2) : PyNumber_Add(op1, op2))
+#endif
+
+/* PyFloatBinop.proto */
+#if !CYTHON_COMPILING_IN_PYPY
+static PyObject* __Pyx_PyFloat_SubtractObjC(PyObject *op1, PyObject *op2, double floatval, int inplace, int zerodivision_check);
+#else
+#define __Pyx_PyFloat_SubtractObjC(op1, op2, floatval, inplace, zerodivision_check)\
+    (inplace ? PyNumber_InPlaceSubtract(op1, op2) : PyNumber_Subtract(op1, op2))
+#endif
+
+/* PyObjectCall2Args.proto */
+static CYTHON_UNUSED PyObject* __Pyx_PyObject_Call2Args(PyObject* function, PyObject* arg1, PyObject* arg2);
 
 /* Import.proto */
 static PyObject *__Pyx_Import(PyObject *name, PyObject *from_list, int level);
@@ -1088,48 +1159,6 @@ static CYTHON_INLINE int __Pyx_PyUnicode_Equals(PyObject* s1, PyObject* s2, int 
 #define __Pyx_PyString_Equals __Pyx_PyUnicode_Equals
 #else
 #define __Pyx_PyString_Equals __Pyx_PyBytes_Equals
-#endif
-
-/* PyFunctionFastCall.proto */
-#if CYTHON_FAST_PYCALL
-#define __Pyx_PyFunction_FastCall(func, args, nargs)\
-    __Pyx_PyFunction_FastCallDict((func), (args), (nargs), NULL)
-#if 1 || PY_VERSION_HEX < 0x030600B1
-static PyObject *__Pyx_PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs, PyObject *kwargs);
-#else
-#define __Pyx_PyFunction_FastCallDict(func, args, nargs, kwargs) _PyFunction_FastCallDict(func, args, nargs, kwargs)
-#endif
-#define __Pyx_BUILD_ASSERT_EXPR(cond)\
-    (sizeof(char [1 - 2*!(cond)]) - 1)
-#ifndef Py_MEMBER_SIZE
-#define Py_MEMBER_SIZE(type, member) sizeof(((type *)0)->member)
-#endif
-  static size_t __pyx_pyframe_localsplus_offset = 0;
-  #include "frameobject.h"
-  #define __Pxy_PyFrame_Initialize_Offsets()\
-    ((void)__Pyx_BUILD_ASSERT_EXPR(sizeof(PyFrameObject) == offsetof(PyFrameObject, f_localsplus) + Py_MEMBER_SIZE(PyFrameObject, f_localsplus)),\
-     (void)(__pyx_pyframe_localsplus_offset = ((size_t)PyFrame_Type.tp_basicsize) - Py_MEMBER_SIZE(PyFrameObject, f_localsplus)))
-  #define __Pyx_PyFrame_GetLocalsplus(frame)\
-    (assert(__pyx_pyframe_localsplus_offset), (PyObject **)(((char *)(frame)) + __pyx_pyframe_localsplus_offset))
-#endif
-
-/* PyObjectCall.proto */
-#if CYTHON_COMPILING_IN_CPYTHON
-static CYTHON_INLINE PyObject* __Pyx_PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw);
-#else
-#define __Pyx_PyObject_Call(func, arg, kw) PyObject_Call(func, arg, kw)
-#endif
-
-/* PyObjectCallMethO.proto */
-#if CYTHON_COMPILING_IN_CPYTHON
-static CYTHON_INLINE PyObject* __Pyx_PyObject_CallMethO(PyObject *func, PyObject *arg);
-#endif
-
-/* PyObjectCallNoArg.proto */
-#if CYTHON_COMPILING_IN_CPYTHON
-static CYTHON_INLINE PyObject* __Pyx_PyObject_CallNoArg(PyObject *func);
-#else
-#define __Pyx_PyObject_CallNoArg(func) __Pyx_PyObject_Call(func, __pyx_empty_tuple, NULL)
 #endif
 
 /* PyThreadStateGet.proto */
@@ -1245,6 +1274,7 @@ int __pyx_module_is_main_feedback = 0;
 
 /* Implementation of 'feedback' */
 static PyObject *__pyx_builtin_object;
+static PyObject *__pyx_builtin_round;
 static const char __pyx_k_doc[] = "__doc__";
 static const char __pyx_k_end[] = "end";
 static const char __pyx_k_low[] = "low";
@@ -1255,7 +1285,8 @@ static const char __pyx_k_file[] = "file";
 static const char __pyx_k_high[] = "high";
 static const char __pyx_k_init[] = "__init__";
 static const char __pyx_k_main[] = "__main__";
-static const char __pyx_k_name[] = "__name__";
+static const char __pyx_k_name[] = "name";
+static const char __pyx_k_rand[] = "rand";
 static const char __pyx_k_self[] = "self";
 static const char __pyx_k_test[] = "__test__";
 static const char __pyx_k_time[] = "time";
@@ -1263,63 +1294,127 @@ static const char __pyx_k_Model[] = "Model";
 static const char __pyx_k_input[] = "input";
 static const char __pyx_k_model[] = "model";
 static const char __pyx_k_print[] = "print";
+static const char __pyx_k_round[] = "round";
+static const char __pyx_k_sleep[] = "sleep";
 static const char __pyx_k_Model1[] = "Model1";
 static const char __pyx_k_Model2[] = "Model2";
 static const char __pyx_k_import[] = "__import__";
 static const char __pyx_k_module[] = "__module__";
+static const char __pyx_k_name_2[] = "__name__";
 static const char __pyx_k_object[] = "object";
+static const char __pyx_k_random[] = "random";
 static const char __pyx_k_calcium[] = "calcium";
 static const char __pyx_k_prepare[] = "__prepare__";
+static const char __pyx_k_randint[] = "randint";
 static const char __pyx_k_sensor1[] = "sensor1";
 static const char __pyx_k_sensor2[] = "sensor2";
 static const char __pyx_k_sensor3[] = "sensor3";
 static const char __pyx_k_sensor4[] = "sensor4";
 static const char __pyx_k_Feedback[] = "Feedback";
+static const char __pyx_k_ML_Level[] = "ML Level: ";
 static const char __pyx_k_ML_input[] = "ML_input";
 static const char __pyx_k_ammonium[] = "ammonium";
 static const char __pyx_k_feedback[] = "feedback";
+static const char __pyx_k_nutrient[] = "nutrient";
 static const char __pyx_k_qualname[] = "__qualname__";
 static const char __pyx_k_updateML[] = "updateML";
 static const char __pyx_k_magnesium[] = "magnesium";
 static const char __pyx_k_metaclass[] = "__metaclass__";
 static const char __pyx_k_phosphorus[] = "phosphorus";
 static const char __pyx_k_feedback_py[] = "feedback.py";
+static const char __pyx_k_get_calcium[] = "get_calcium";
+static const char __pyx_k_phosphorous[] = "phosphorous";
 static const char __pyx_k_Feedback_run[] = "Feedback.run";
+static const char __pyx_k_Running_Loop[] = "Running Loop";
+static const char __pyx_k_get_ammonium[] = "get_ammonium";
+static const char __pyx_k_update_model[] = "update_model";
+static const char __pyx_k_Current_model[] = "Current model: ";
 static const char __pyx_k_Model1___init[] = "Model1.__init__";
 static const char __pyx_k_Model2___init[] = "Model2.__init__";
+static const char __pyx_k_get_magnesium[] = "get_magnesium";
+static const char __pyx_k_Nutrient_Level[] = "Nutrient Level: ";
+static const char __pyx_k_get_phosphorus[] = "get_phosphorus";
+static const char __pyx_k_nutrient_model[] = "nutrient_model";
 static const char __pyx_k_Feedback___init[] = "Feedback.__init__";
+static const char __pyx_k_current_calcium[] = "current_calcium";
 static const char __pyx_k_Feedback_sensor1[] = "Feedback.sensor1";
 static const char __pyx_k_Feedback_sensor2[] = "Feedback.sensor2";
 static const char __pyx_k_Feedback_sensor3[] = "Feedback.sensor3";
 static const char __pyx_k_Feedback_sensor4[] = "Feedback.sensor4";
+static const char __pyx_k_Release_ammonium[] = "Release ammonium";
+static const char __pyx_k_current_ammonium[] = "current_ammonium";
 static const char __pyx_k_Feedback_updateML[] = "Feedback.updateML";
+static const char __pyx_k_Release_magnesium[] = "Release magnesium";
+static const char __pyx_k_Setting_System_Up[] = "Setting System Up...";
+static const char __pyx_k_current_magnesium[] = "current_magnesium";
 static const char __pyx_k_cline_in_traceback[] = "cline_in_traceback";
+static const char __pyx_k_nutrient_absoption[] = "nutrient_absoption";
+static const char __pyx_k_current_phosphorous[] = "current_phosphorous";
+static const char __pyx_k_Feedback_get_calcium[] = "Feedback.get_calcium";
+static const char __pyx_k_Machine_Model_Output[] = "Machine Model Output: ";
+static const char __pyx_k_Feedback_get_ammonium[] = "Feedback.get_ammonium";
+static const char __pyx_k_Feedback_update_model[] = "Feedback.update_model";
+static const char __pyx_k_Don_t_release_ammonium[] = "Don't release ammonium";
+static const char __pyx_k_Feedback_get_magnesium[] = "Feedback.get_magnesium";
+static const char __pyx_k_Don_t_release_magnesium[] = "Don't release magnesium";
 static const char __pyx_k_Feedback_Loop_Completed[] = "Feedback Loop Completed";
+static const char __pyx_k_Feedback_get_phosphorus[] = "Feedback.get_phosphorus";
+static const char __pyx_k_Initial_runtime_sequence[] = "\n        Initial runtime sequence\n    ";
+static const char __pyx_k_Feedback_nutrient_absoption[] = "Feedback.nutrient_absoption";
+static const char __pyx_k_Unsucessful_value_returned_from[] = "Unsucessful value returned from ML algorithm. Please make sure either 0 or 1 is returned.";
+static const char __pyx_k_Thank_you_for_using_our_nutrient[] = "Thank you for using our nutrient delivery system.";
+static PyObject *__pyx_kp_s_Current_model;
+static PyObject *__pyx_kp_s_Don_t_release_ammonium;
+static PyObject *__pyx_kp_s_Don_t_release_magnesium;
 static PyObject *__pyx_n_s_Enum;
 static PyObject *__pyx_n_s_Feedback;
 static PyObject *__pyx_kp_s_Feedback_Loop_Completed;
 static PyObject *__pyx_n_s_Feedback___init;
+static PyObject *__pyx_n_s_Feedback_get_ammonium;
+static PyObject *__pyx_n_s_Feedback_get_calcium;
+static PyObject *__pyx_n_s_Feedback_get_magnesium;
+static PyObject *__pyx_n_s_Feedback_get_phosphorus;
+static PyObject *__pyx_n_s_Feedback_nutrient_absoption;
 static PyObject *__pyx_n_s_Feedback_run;
 static PyObject *__pyx_n_s_Feedback_sensor1;
 static PyObject *__pyx_n_s_Feedback_sensor2;
 static PyObject *__pyx_n_s_Feedback_sensor3;
 static PyObject *__pyx_n_s_Feedback_sensor4;
 static PyObject *__pyx_n_s_Feedback_updateML;
+static PyObject *__pyx_n_s_Feedback_update_model;
+static PyObject *__pyx_kp_s_Initial_runtime_sequence;
+static PyObject *__pyx_kp_s_ML_Level;
 static PyObject *__pyx_n_s_ML_input;
+static PyObject *__pyx_kp_s_Machine_Model_Output;
 static PyObject *__pyx_n_s_Model;
 static PyObject *__pyx_n_s_Model1;
 static PyObject *__pyx_n_s_Model1___init;
 static PyObject *__pyx_n_s_Model2;
 static PyObject *__pyx_n_s_Model2___init;
+static PyObject *__pyx_kp_s_Nutrient_Level;
+static PyObject *__pyx_kp_s_Release_ammonium;
+static PyObject *__pyx_kp_s_Release_magnesium;
+static PyObject *__pyx_kp_s_Running_Loop;
+static PyObject *__pyx_kp_s_Setting_System_Up;
+static PyObject *__pyx_kp_s_Thank_you_for_using_our_nutrient;
+static PyObject *__pyx_kp_s_Unsucessful_value_returned_from;
 static PyObject *__pyx_n_s_ammonium;
 static PyObject *__pyx_n_s_calcium;
 static PyObject *__pyx_n_s_cline_in_traceback;
+static PyObject *__pyx_n_s_current_ammonium;
+static PyObject *__pyx_n_s_current_calcium;
+static PyObject *__pyx_n_s_current_magnesium;
+static PyObject *__pyx_n_s_current_phosphorous;
 static PyObject *__pyx_n_s_doc;
 static PyObject *__pyx_n_s_end;
 static PyObject *__pyx_n_s_enum;
 static PyObject *__pyx_n_s_feedback;
 static PyObject *__pyx_kp_s_feedback_py;
 static PyObject *__pyx_n_s_file;
+static PyObject *__pyx_n_s_get_ammonium;
+static PyObject *__pyx_n_s_get_calcium;
+static PyObject *__pyx_n_s_get_magnesium;
+static PyObject *__pyx_n_s_get_phosphorus;
 static PyObject *__pyx_n_s_high;
 static PyObject *__pyx_n_s_import;
 static PyObject *__pyx_n_s_init;
@@ -1331,59 +1426,92 @@ static PyObject *__pyx_n_s_metaclass;
 static PyObject *__pyx_n_s_model;
 static PyObject *__pyx_n_s_module;
 static PyObject *__pyx_n_s_name;
+static PyObject *__pyx_n_s_name_2;
+static PyObject *__pyx_n_s_nutrient;
+static PyObject *__pyx_n_s_nutrient_absoption;
+static PyObject *__pyx_n_s_nutrient_model;
 static PyObject *__pyx_n_s_object;
+static PyObject *__pyx_n_s_phosphorous;
 static PyObject *__pyx_n_s_phosphorus;
 static PyObject *__pyx_n_s_prepare;
 static PyObject *__pyx_n_s_print;
 static PyObject *__pyx_n_s_qualname;
+static PyObject *__pyx_n_s_rand;
+static PyObject *__pyx_n_s_randint;
+static PyObject *__pyx_n_s_random;
+static PyObject *__pyx_n_s_round;
 static PyObject *__pyx_n_s_run;
 static PyObject *__pyx_n_s_self;
 static PyObject *__pyx_n_s_sensor1;
 static PyObject *__pyx_n_s_sensor2;
 static PyObject *__pyx_n_s_sensor3;
 static PyObject *__pyx_n_s_sensor4;
+static PyObject *__pyx_n_s_sleep;
 static PyObject *__pyx_n_s_test;
 static PyObject *__pyx_n_s_time;
 static PyObject *__pyx_n_s_updateML;
+static PyObject *__pyx_n_s_update_model;
 static PyObject *__pyx_pf_8feedback_6Model1___init__(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_self); /* proto */
 static PyObject *__pyx_pf_8feedback_6Model2___init__(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_self); /* proto */
-static PyObject *__pyx_pf_8feedback_8Feedback___init__(CYTHON_UNUSED PyObject *__pyx_self, CYTHON_UNUSED PyObject *__pyx_v_self); /* proto */
-static PyObject *__pyx_pf_8feedback_8Feedback_2updateML(CYTHON_UNUSED PyObject *__pyx_self, CYTHON_UNUSED PyObject *__pyx_v_self, PyObject *__pyx_v_input); /* proto */
-static PyObject *__pyx_pf_8feedback_8Feedback_4sensor1(CYTHON_UNUSED PyObject *__pyx_self, CYTHON_UNUSED PyObject *__pyx_v_self); /* proto */
-static PyObject *__pyx_pf_8feedback_8Feedback_6sensor2(CYTHON_UNUSED PyObject *__pyx_self, CYTHON_UNUSED PyObject *__pyx_v_self); /* proto */
-static PyObject *__pyx_pf_8feedback_8Feedback_8sensor3(CYTHON_UNUSED PyObject *__pyx_self, CYTHON_UNUSED PyObject *__pyx_v_self); /* proto */
-static PyObject *__pyx_pf_8feedback_8Feedback_10sensor4(CYTHON_UNUSED PyObject *__pyx_self, CYTHON_UNUSED PyObject *__pyx_v_self); /* proto */
-static PyObject *__pyx_pf_8feedback_8Feedback_12run(CYTHON_UNUSED PyObject *__pyx_self, CYTHON_UNUSED PyObject *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_8feedback_8Feedback___init__(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_8feedback_8Feedback_2update_model(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_8feedback_8Feedback_4updateML(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_self, PyObject *__pyx_v_input); /* proto */
+static PyObject *__pyx_pf_8feedback_8Feedback_6get_ammonium(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_8feedback_8Feedback_8get_magnesium(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_8feedback_8Feedback_10get_calcium(CYTHON_UNUSED PyObject *__pyx_self, CYTHON_UNUSED PyObject *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_8feedback_8Feedback_12get_phosphorus(CYTHON_UNUSED PyObject *__pyx_self, CYTHON_UNUSED PyObject *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_8feedback_8Feedback_14sensor1(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_8feedback_8Feedback_16sensor2(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_8feedback_8Feedback_18sensor3(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_8feedback_8Feedback_20sensor4(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_8feedback_8Feedback_22nutrient_absoption(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_8feedback_8Feedback_24run(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_self); /* proto */
 static PyObject *__pyx_float__5;
 static PyObject *__pyx_float__9;
+static PyObject *__pyx_float__05;
 static PyObject *__pyx_float__75;
+static PyObject *__pyx_float_1_1;
 static PyObject *__pyx_float_1_5;
 static PyObject *__pyx_float_1_8;
 static PyObject *__pyx_int_0;
 static PyObject *__pyx_int_1;
+static PyObject *__pyx_int_2;
 static PyObject *__pyx_tuple_;
 static PyObject *__pyx_tuple__2;
-static PyObject *__pyx_tuple__4;
+static PyObject *__pyx_tuple__3;
 static PyObject *__pyx_tuple__5;
-static PyObject *__pyx_tuple__7;
-static PyObject *__pyx_tuple__9;
-static PyObject *__pyx_tuple__11;
-static PyObject *__pyx_tuple__13;
-static PyObject *__pyx_tuple__15;
-static PyObject *__pyx_tuple__17;
-static PyObject *__pyx_tuple__19;
-static PyObject *__pyx_codeobj__3;
-static PyObject *__pyx_codeobj__6;
-static PyObject *__pyx_codeobj__8;
-static PyObject *__pyx_codeobj__10;
-static PyObject *__pyx_codeobj__12;
-static PyObject *__pyx_codeobj__14;
-static PyObject *__pyx_codeobj__16;
-static PyObject *__pyx_codeobj__18;
-static PyObject *__pyx_codeobj__20;
+static PyObject *__pyx_tuple__6;
+static PyObject *__pyx_tuple__8;
+static PyObject *__pyx_tuple__10;
+static PyObject *__pyx_tuple__12;
+static PyObject *__pyx_tuple__14;
+static PyObject *__pyx_tuple__16;
+static PyObject *__pyx_tuple__18;
+static PyObject *__pyx_tuple__20;
+static PyObject *__pyx_tuple__22;
+static PyObject *__pyx_tuple__24;
+static PyObject *__pyx_tuple__26;
+static PyObject *__pyx_tuple__28;
+static PyObject *__pyx_tuple__30;
+static PyObject *__pyx_tuple__32;
+static PyObject *__pyx_codeobj__4;
+static PyObject *__pyx_codeobj__7;
+static PyObject *__pyx_codeobj__9;
+static PyObject *__pyx_codeobj__11;
+static PyObject *__pyx_codeobj__13;
+static PyObject *__pyx_codeobj__15;
+static PyObject *__pyx_codeobj__17;
+static PyObject *__pyx_codeobj__19;
+static PyObject *__pyx_codeobj__21;
+static PyObject *__pyx_codeobj__23;
+static PyObject *__pyx_codeobj__25;
+static PyObject *__pyx_codeobj__27;
+static PyObject *__pyx_codeobj__29;
+static PyObject *__pyx_codeobj__31;
+static PyObject *__pyx_codeobj__33;
 /* Late includes */
 
-/* "feedback.py":9
+/* "feedback.py":10
  * 
  * class Model1(object):
  *     def __init__(self):             # <<<<<<<<<<<<<<
@@ -1413,43 +1541,43 @@ static PyObject *__pyx_pf_8feedback_6Model1___init__(CYTHON_UNUSED PyObject *__p
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__init__", 0);
 
-  /* "feedback.py":10
+  /* "feedback.py":11
  * class Model1(object):
  *     def __init__(self):
  *         self.ammonium = .75             # <<<<<<<<<<<<<<
  *         self.magnesium = .5
  *         self.calcium = .5
  */
-  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_ammonium, __pyx_float__75) < 0) __PYX_ERR(0, 10, __pyx_L1_error)
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_ammonium, __pyx_float__75) < 0) __PYX_ERR(0, 11, __pyx_L1_error)
 
-  /* "feedback.py":11
+  /* "feedback.py":12
  *     def __init__(self):
  *         self.ammonium = .75
  *         self.magnesium = .5             # <<<<<<<<<<<<<<
  *         self.calcium = .5
  *         self.phosphorus = .9
  */
-  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_magnesium, __pyx_float__5) < 0) __PYX_ERR(0, 11, __pyx_L1_error)
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_magnesium, __pyx_float__5) < 0) __PYX_ERR(0, 12, __pyx_L1_error)
 
-  /* "feedback.py":12
+  /* "feedback.py":13
  *         self.ammonium = .75
  *         self.magnesium = .5
  *         self.calcium = .5             # <<<<<<<<<<<<<<
  *         self.phosphorus = .9
  * 
  */
-  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_calcium, __pyx_float__5) < 0) __PYX_ERR(0, 12, __pyx_L1_error)
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_calcium, __pyx_float__5) < 0) __PYX_ERR(0, 13, __pyx_L1_error)
 
-  /* "feedback.py":13
+  /* "feedback.py":14
  *         self.magnesium = .5
  *         self.calcium = .5
  *         self.phosphorus = .9             # <<<<<<<<<<<<<<
  * 
  * class Model2(object):
  */
-  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_phosphorus, __pyx_float__9) < 0) __PYX_ERR(0, 13, __pyx_L1_error)
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_phosphorus, __pyx_float__9) < 0) __PYX_ERR(0, 14, __pyx_L1_error)
 
-  /* "feedback.py":9
+  /* "feedback.py":10
  * 
  * class Model1(object):
  *     def __init__(self):             # <<<<<<<<<<<<<<
@@ -1469,12 +1597,12 @@ static PyObject *__pyx_pf_8feedback_6Model1___init__(CYTHON_UNUSED PyObject *__p
   return __pyx_r;
 }
 
-/* "feedback.py":16
+/* "feedback.py":17
  * 
  * class Model2(object):
  *     def __init__(self):             # <<<<<<<<<<<<<<
  *         self.ammonium = 1.5
- *         self.magnesium = 1
+ *         self.magnesium = 1.1
  */
 
 /* Python wrapper */
@@ -1499,48 +1627,48 @@ static PyObject *__pyx_pf_8feedback_6Model2___init__(CYTHON_UNUSED PyObject *__p
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__init__", 0);
 
-  /* "feedback.py":17
+  /* "feedback.py":18
  * class Model2(object):
  *     def __init__(self):
  *         self.ammonium = 1.5             # <<<<<<<<<<<<<<
- *         self.magnesium = 1
- *         self.calcium = 1
+ *         self.magnesium = 1.1
+ *         self.calcium = 1.1
  */
-  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_ammonium, __pyx_float_1_5) < 0) __PYX_ERR(0, 17, __pyx_L1_error)
-
-  /* "feedback.py":18
- *     def __init__(self):
- *         self.ammonium = 1.5
- *         self.magnesium = 1             # <<<<<<<<<<<<<<
- *         self.calcium = 1
- *         self.phosphorus = 1.8
- */
-  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_magnesium, __pyx_int_1) < 0) __PYX_ERR(0, 18, __pyx_L1_error)
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_ammonium, __pyx_float_1_5) < 0) __PYX_ERR(0, 18, __pyx_L1_error)
 
   /* "feedback.py":19
+ *     def __init__(self):
  *         self.ammonium = 1.5
- *         self.magnesium = 1
- *         self.calcium = 1             # <<<<<<<<<<<<<<
+ *         self.magnesium = 1.1             # <<<<<<<<<<<<<<
+ *         self.calcium = 1.1
+ *         self.phosphorus = 1.8
+ */
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_magnesium, __pyx_float_1_1) < 0) __PYX_ERR(0, 19, __pyx_L1_error)
+
+  /* "feedback.py":20
+ *         self.ammonium = 1.5
+ *         self.magnesium = 1.1
+ *         self.calcium = 1.1             # <<<<<<<<<<<<<<
  *         self.phosphorus = 1.8
  * 
  */
-  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_calcium, __pyx_int_1) < 0) __PYX_ERR(0, 19, __pyx_L1_error)
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_calcium, __pyx_float_1_1) < 0) __PYX_ERR(0, 20, __pyx_L1_error)
 
-  /* "feedback.py":20
- *         self.magnesium = 1
- *         self.calcium = 1
+  /* "feedback.py":21
+ *         self.magnesium = 1.1
+ *         self.calcium = 1.1
  *         self.phosphorus = 1.8             # <<<<<<<<<<<<<<
  * 
  * class Feedback():
  */
-  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_phosphorus, __pyx_float_1_8) < 0) __PYX_ERR(0, 20, __pyx_L1_error)
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_phosphorus, __pyx_float_1_8) < 0) __PYX_ERR(0, 21, __pyx_L1_error)
 
-  /* "feedback.py":16
+  /* "feedback.py":17
  * 
  * class Model2(object):
  *     def __init__(self):             # <<<<<<<<<<<<<<
  *         self.ammonium = 1.5
- *         self.magnesium = 1
+ *         self.magnesium = 1.1
  */
 
   /* function exit code */
@@ -1555,12 +1683,12 @@ static PyObject *__pyx_pf_8feedback_6Model2___init__(CYTHON_UNUSED PyObject *__p
   return __pyx_r;
 }
 
-/* "feedback.py":26
- *     model = Model.low
- * 
+/* "feedback.py":28
+ *         Initial runtime sequence
+ *     '''
  *     def __init__(self):             # <<<<<<<<<<<<<<
- * 
- *         pass
+ *         print("Setting System Up...")
+ *         # class variable representing model object; holds double values for each nutrient
  */
 
 /* Python wrapper */
@@ -1577,31 +1705,343 @@ static PyObject *__pyx_pw_8feedback_8Feedback_1__init__(PyObject *__pyx_self, Py
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_8feedback_8Feedback___init__(CYTHON_UNUSED PyObject *__pyx_self, CYTHON_UNUSED PyObject *__pyx_v_self) {
+static PyObject *__pyx_pf_8feedback_8Feedback___init__(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  PyObject *__pyx_t_3 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__init__", 0);
+
+  /* "feedback.py":29
+ *     '''
+ *     def __init__(self):
+ *         print("Setting System Up...")             # <<<<<<<<<<<<<<
+ *         # class variable representing model object; holds double values for each nutrient
+ *         self.model = Model.low
+ */
+  if (__Pyx_PrintOne(0, __pyx_kp_s_Setting_System_Up) < 0) __PYX_ERR(0, 29, __pyx_L1_error)
+
+  /* "feedback.py":31
+ *         print("Setting System Up...")
+ *         # class variable representing model object; holds double values for each nutrient
+ *         self.model = Model.low             # <<<<<<<<<<<<<<
+ *         self.nutrient_model = Model1
+ * 
+ */
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_Model); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 31, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_low); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 31, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_model, __pyx_t_2) < 0) __PYX_ERR(0, 31, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "feedback.py":32
+ *         # class variable representing model object; holds double values for each nutrient
+ *         self.model = Model.low
+ *         self.nutrient_model = Model1             # <<<<<<<<<<<<<<
+ * 
+ *         self.ammonium = self.nutrient_model.ammonium
+ */
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_Model1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 32, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_nutrient_model, __pyx_t_2) < 0) __PYX_ERR(0, 32, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "feedback.py":34
+ *         self.nutrient_model = Model1
+ * 
+ *         self.ammonium = self.nutrient_model.ammonium             # <<<<<<<<<<<<<<
+ *         self.magnesium = self.nutrient_model.magnesium
+ *         self.calcium = self.nutrient_model.calcium
+ */
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_nutrient_model); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 34, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_ammonium); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 34, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_ammonium, __pyx_t_1) < 0) __PYX_ERR(0, 34, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+  /* "feedback.py":35
+ * 
+ *         self.ammonium = self.nutrient_model.ammonium
+ *         self.magnesium = self.nutrient_model.magnesium             # <<<<<<<<<<<<<<
+ *         self.calcium = self.nutrient_model.calcium
+ *         self.phosphorous = self.nutrient_model.phosphorus
+ */
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_nutrient_model); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 35, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_magnesium); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 35, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_magnesium, __pyx_t_2) < 0) __PYX_ERR(0, 35, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "feedback.py":36
+ *         self.ammonium = self.nutrient_model.ammonium
+ *         self.magnesium = self.nutrient_model.magnesium
+ *         self.calcium = self.nutrient_model.calcium             # <<<<<<<<<<<<<<
+ *         self.phosphorous = self.nutrient_model.phosphorus
+ * 
+ */
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_nutrient_model); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 36, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_calcium); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 36, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_calcium, __pyx_t_1) < 0) __PYX_ERR(0, 36, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+  /* "feedback.py":37
+ *         self.magnesium = self.nutrient_model.magnesium
+ *         self.calcium = self.nutrient_model.calcium
+ *         self.phosphorous = self.nutrient_model.phosphorus             # <<<<<<<<<<<<<<
+ * 
+ *         self.current_ammonium = 0
+ */
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_nutrient_model); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 37, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_phosphorus); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 37, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_phosphorous, __pyx_t_2) < 0) __PYX_ERR(0, 37, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "feedback.py":39
+ *         self.phosphorous = self.nutrient_model.phosphorus
+ * 
+ *         self.current_ammonium = 0             # <<<<<<<<<<<<<<
+ *         self.current_magnesium = 0
+ *         self.current_calcium = 0
+ */
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_current_ammonium, __pyx_int_0) < 0) __PYX_ERR(0, 39, __pyx_L1_error)
+
+  /* "feedback.py":40
+ * 
+ *         self.current_ammonium = 0
+ *         self.current_magnesium = 0             # <<<<<<<<<<<<<<
+ *         self.current_calcium = 0
+ *         self.current_phosphorous = 0
+ */
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_current_magnesium, __pyx_int_0) < 0) __PYX_ERR(0, 40, __pyx_L1_error)
+
+  /* "feedback.py":41
+ *         self.current_ammonium = 0
+ *         self.current_magnesium = 0
+ *         self.current_calcium = 0             # <<<<<<<<<<<<<<
+ *         self.current_phosphorous = 0
+ * 
+ */
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_current_calcium, __pyx_int_0) < 0) __PYX_ERR(0, 41, __pyx_L1_error)
+
+  /* "feedback.py":42
+ *         self.current_magnesium = 0
+ *         self.current_calcium = 0
+ *         self.current_phosphorous = 0             # <<<<<<<<<<<<<<
+ * 
+ *         self.update_model()
+ */
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_current_phosphorous, __pyx_int_0) < 0) __PYX_ERR(0, 42, __pyx_L1_error)
+
+  /* "feedback.py":44
+ *         self.current_phosphorous = 0
+ * 
+ *         self.update_model()             # <<<<<<<<<<<<<<
+ *         print("Current model: " + self.model.name)
+ * 
+ */
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_update_model); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 44, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_3 = NULL;
+  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_1))) {
+    __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_1);
+    if (likely(__pyx_t_3)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
+      __Pyx_INCREF(__pyx_t_3);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_1, function);
+    }
+  }
+  __pyx_t_2 = (__pyx_t_3) ? __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_t_3) : __Pyx_PyObject_CallNoArg(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
+  if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 44, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "feedback.py":45
+ * 
+ *         self.update_model()
+ *         print("Current model: " + self.model.name)             # <<<<<<<<<<<<<<
+ * 
+ *     '''
+ */
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_model); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 45, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_name); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 45, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_2 = PyNumber_Add(__pyx_kp_s_Current_model, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 45, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  if (__Pyx_PrintOne(0, __pyx_t_2) < 0) __PYX_ERR(0, 45, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "feedback.py":28
+ *         Initial runtime sequence
+ *     '''
+ *     def __init__(self):             # <<<<<<<<<<<<<<
+ *         print("Setting System Up...")
+ *         # class variable representing model object; holds double values for each nutrient
+ */
 
   /* function exit code */
   __pyx_r = Py_None; __Pyx_INCREF(Py_None);
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_AddTraceback("feedback.Feedback.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "feedback.py":30
- *         pass
+/* "feedback.py":51
+ *         Requires: doubles from class object
+ *     '''
+ *     def update_model(self):             # <<<<<<<<<<<<<<
+ *         self.ammonium = self.nutrient_model.ammonium
+ *         self.magnesium = self.nutrient_model.magnesium
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_8feedback_8Feedback_3update_model(PyObject *__pyx_self, PyObject *__pyx_v_self); /*proto*/
+static PyMethodDef __pyx_mdef_8feedback_8Feedback_3update_model = {"update_model", (PyCFunction)__pyx_pw_8feedback_8Feedback_3update_model, METH_O, 0};
+static PyObject *__pyx_pw_8feedback_8Feedback_3update_model(PyObject *__pyx_self, PyObject *__pyx_v_self) {
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("update_model (wrapper)", 0);
+  __pyx_r = __pyx_pf_8feedback_8Feedback_2update_model(__pyx_self, ((PyObject *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_8feedback_8Feedback_2update_model(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("update_model", 0);
+
+  /* "feedback.py":52
+ *     '''
+ *     def update_model(self):
+ *         self.ammonium = self.nutrient_model.ammonium             # <<<<<<<<<<<<<<
+ *         self.magnesium = self.nutrient_model.magnesium
+ *         self.calcium = self.nutrient_model.calcium
+ */
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_nutrient_model); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 52, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_ammonium); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 52, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_ammonium, __pyx_t_2) < 0) __PYX_ERR(0, 52, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "feedback.py":53
+ *     def update_model(self):
+ *         self.ammonium = self.nutrient_model.ammonium
+ *         self.magnesium = self.nutrient_model.magnesium             # <<<<<<<<<<<<<<
+ *         self.calcium = self.nutrient_model.calcium
+ *         self.phosphorous = self.nutrient_model.phosphorus
+ */
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_nutrient_model); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 53, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_magnesium); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 53, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_magnesium, __pyx_t_1) < 0) __PYX_ERR(0, 53, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+  /* "feedback.py":54
+ *         self.ammonium = self.nutrient_model.ammonium
+ *         self.magnesium = self.nutrient_model.magnesium
+ *         self.calcium = self.nutrient_model.calcium             # <<<<<<<<<<<<<<
+ *         self.phosphorous = self.nutrient_model.phosphorus
  * 
+ */
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_nutrient_model); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 54, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_calcium); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 54, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_calcium, __pyx_t_2) < 0) __PYX_ERR(0, 54, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "feedback.py":55
+ *         self.magnesium = self.nutrient_model.magnesium
+ *         self.calcium = self.nutrient_model.calcium
+ *         self.phosphorous = self.nutrient_model.phosphorus             # <<<<<<<<<<<<<<
+ * 
+ *     '''
+ */
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_nutrient_model); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 55, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_phosphorus); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 55, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_phosphorous, __pyx_t_1) < 0) __PYX_ERR(0, 55, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+  /* "feedback.py":51
+ *         Requires: doubles from class object
+ *     '''
+ *     def update_model(self):             # <<<<<<<<<<<<<<
+ *         self.ammonium = self.nutrient_model.ammonium
+ *         self.magnesium = self.nutrient_model.magnesium
+ */
+
+  /* function exit code */
+  __pyx_r = Py_None; __Pyx_INCREF(Py_None);
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_AddTraceback("feedback.Feedback.update_model", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "feedback.py":61
+ *         Requires: input as binary 1 or 0 from sensor output
+ *     '''
  *     def updateML(self, input):             # <<<<<<<<<<<<<<
  *         ML_input = input
  *         if (ML_input == 0):
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_8feedback_8Feedback_3updateML(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyMethodDef __pyx_mdef_8feedback_8Feedback_3updateML = {"updateML", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_8feedback_8Feedback_3updateML, METH_VARARGS|METH_KEYWORDS, 0};
-static PyObject *__pyx_pw_8feedback_8Feedback_3updateML(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
-  CYTHON_UNUSED PyObject *__pyx_v_self = 0;
+static PyObject *__pyx_pw_8feedback_8Feedback_5updateML(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyMethodDef __pyx_mdef_8feedback_8Feedback_5updateML = {"updateML", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_8feedback_8Feedback_5updateML, METH_VARARGS|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_8feedback_8Feedback_5updateML(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+  PyObject *__pyx_v_self = 0;
   PyObject *__pyx_v_input = 0;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
@@ -1632,11 +2072,11 @@ static PyObject *__pyx_pw_8feedback_8Feedback_3updateML(PyObject *__pyx_self, Py
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_input)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("updateML", 1, 2, 2, 1); __PYX_ERR(0, 30, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("updateML", 1, 2, 2, 1); __PYX_ERR(0, 61, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "updateML") < 0)) __PYX_ERR(0, 30, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "updateML") < 0)) __PYX_ERR(0, 61, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
@@ -1649,106 +2089,183 @@ static PyObject *__pyx_pw_8feedback_8Feedback_3updateML(PyObject *__pyx_self, Py
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("updateML", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 30, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("updateML", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 61, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("feedback.Feedback.updateML", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_8feedback_8Feedback_2updateML(__pyx_self, __pyx_v_self, __pyx_v_input);
+  __pyx_r = __pyx_pf_8feedback_8Feedback_4updateML(__pyx_self, __pyx_v_self, __pyx_v_input);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_8feedback_8Feedback_2updateML(CYTHON_UNUSED PyObject *__pyx_self, CYTHON_UNUSED PyObject *__pyx_v_self, PyObject *__pyx_v_input) {
+static PyObject *__pyx_pf_8feedback_8Feedback_4updateML(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_self, PyObject *__pyx_v_input) {
   PyObject *__pyx_v_ML_input = NULL;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_t_2;
   PyObject *__pyx_t_3 = NULL;
+  PyObject *__pyx_t_4 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("updateML", 0);
 
-  /* "feedback.py":31
- * 
+  /* "feedback.py":62
+ *     '''
  *     def updateML(self, input):
  *         ML_input = input             # <<<<<<<<<<<<<<
  *         if (ML_input == 0):
- *             Feedback.model = Model.low
+ *             self.model = Model.low
  */
   __Pyx_INCREF(__pyx_v_input);
   __pyx_v_ML_input = __pyx_v_input;
 
-  /* "feedback.py":32
+  /* "feedback.py":63
  *     def updateML(self, input):
  *         ML_input = input
  *         if (ML_input == 0):             # <<<<<<<<<<<<<<
- *             Feedback.model = Model.low
- *         else:
+ *             self.model = Model.low
+ *             self.nutrient_model = Model1
  */
-  __pyx_t_1 = __Pyx_PyInt_EqObjC(__pyx_v_ML_input, __pyx_int_0, 0, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 32, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_EqObjC(__pyx_v_ML_input, __pyx_int_0, 0, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 63, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 32, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 63, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (__pyx_t_2) {
 
-    /* "feedback.py":33
+    /* "feedback.py":64
  *         ML_input = input
  *         if (ML_input == 0):
- *             Feedback.model = Model.low             # <<<<<<<<<<<<<<
- *         else:
- *             Feedback.model = Model.high
+ *             self.model = Model.low             # <<<<<<<<<<<<<<
+ *             self.nutrient_model = Model1
+ *         elif (ML_input == 1):
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_Model); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 33, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_Model); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 64, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_low); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 33, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_low); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 64, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_Feedback); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 33, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-    if (__Pyx_PyObject_SetAttrStr(__pyx_t_1, __pyx_n_s_model, __pyx_t_3) < 0) __PYX_ERR(0, 33, __pyx_L1_error)
+    if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_model, __pyx_t_3) < 0) __PYX_ERR(0, 64, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-    /* "feedback.py":32
+    /* "feedback.py":65
+ *         if (ML_input == 0):
+ *             self.model = Model.low
+ *             self.nutrient_model = Model1             # <<<<<<<<<<<<<<
+ *         elif (ML_input == 1):
+ *             self.model = Model.high
+ */
+    __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_Model1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 65, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_nutrient_model, __pyx_t_3) < 0) __PYX_ERR(0, 65, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+    /* "feedback.py":63
  *     def updateML(self, input):
  *         ML_input = input
  *         if (ML_input == 0):             # <<<<<<<<<<<<<<
- *             Feedback.model = Model.low
- *         else:
+ *             self.model = Model.low
+ *             self.nutrient_model = Model1
  */
     goto __pyx_L3;
   }
 
-  /* "feedback.py":35
- *             Feedback.model = Model.low
+  /* "feedback.py":66
+ *             self.model = Model.low
+ *             self.nutrient_model = Model1
+ *         elif (ML_input == 1):             # <<<<<<<<<<<<<<
+ *             self.model = Model.high
+ *             self.nutrient_model = Model2
+ */
+  __pyx_t_3 = __Pyx_PyInt_EqObjC(__pyx_v_ML_input, __pyx_int_1, 1, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 66, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_3); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 66, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  if (__pyx_t_2) {
+
+    /* "feedback.py":67
+ *             self.nutrient_model = Model1
+ *         elif (ML_input == 1):
+ *             self.model = Model.high             # <<<<<<<<<<<<<<
+ *             self.nutrient_model = Model2
  *         else:
- *             Feedback.model = Model.high             # <<<<<<<<<<<<<<
- *         pass
+ */
+    __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_Model); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 67, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_high); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 67, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_model, __pyx_t_1) < 0) __PYX_ERR(0, 67, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+    /* "feedback.py":68
+ *         elif (ML_input == 1):
+ *             self.model = Model.high
+ *             self.nutrient_model = Model2             # <<<<<<<<<<<<<<
+ *         else:
+ *             print("Unsucessful value returned from ML algorithm. Please make sure either 0 or 1 is returned.")
+ */
+    __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_Model2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 68, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_nutrient_model, __pyx_t_1) < 0) __PYX_ERR(0, 68, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+    /* "feedback.py":66
+ *             self.model = Model.low
+ *             self.nutrient_model = Model1
+ *         elif (ML_input == 1):             # <<<<<<<<<<<<<<
+ *             self.model = Model.high
+ *             self.nutrient_model = Model2
+ */
+    goto __pyx_L3;
+  }
+
+  /* "feedback.py":70
+ *             self.nutrient_model = Model2
+ *         else:
+ *             print("Unsucessful value returned from ML algorithm. Please make sure either 0 or 1 is returned.")             # <<<<<<<<<<<<<<
+ *         self.update_model()
  * 
  */
   /*else*/ {
-    __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_Model); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 35, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_high); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 35, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
-    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_Feedback); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 35, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-    if (__Pyx_PyObject_SetAttrStr(__pyx_t_1, __pyx_n_s_model, __pyx_t_3) < 0) __PYX_ERR(0, 35, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    if (__Pyx_PrintOne(0, __pyx_kp_s_Unsucessful_value_returned_from) < 0) __PYX_ERR(0, 70, __pyx_L1_error)
   }
   __pyx_L3:;
 
-  /* "feedback.py":30
- *         pass
+  /* "feedback.py":71
+ *         else:
+ *             print("Unsucessful value returned from ML algorithm. Please make sure either 0 or 1 is returned.")
+ *         self.update_model()             # <<<<<<<<<<<<<<
  * 
+ * 
+ */
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_update_model); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 71, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_4 = NULL;
+  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_3))) {
+    __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_3);
+    if (likely(__pyx_t_4)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_3);
+      __Pyx_INCREF(__pyx_t_4);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_3, function);
+    }
+  }
+  __pyx_t_1 = (__pyx_t_4) ? __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_4) : __Pyx_PyObject_CallNoArg(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 71, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+  /* "feedback.py":61
+ *         Requires: input as binary 1 or 0 from sensor output
+ *     '''
  *     def updateML(self, input):             # <<<<<<<<<<<<<<
  *         ML_input = input
  *         if (ML_input == 0):
@@ -1760,6 +2277,7 @@ static PyObject *__pyx_pf_8feedback_8Feedback_2updateML(CYTHON_UNUSED PyObject *
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
   __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4);
   __Pyx_AddTraceback("feedback.Feedback.updateML", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
@@ -1769,189 +2287,1219 @@ static PyObject *__pyx_pf_8feedback_8Feedback_2updateML(CYTHON_UNUSED PyObject *
   return __pyx_r;
 }
 
-/* "feedback.py":38
- *         pass
+/* "feedback.py":78
+ *         Requires: N/A
+ *     '''
+ *     def get_ammonium(self):             # <<<<<<<<<<<<<<
+ *         return self.current_ammonium
  * 
- *     def sensor1(self):             # <<<<<<<<<<<<<<
- *         pass
- *     def sensor2(self):
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_8feedback_8Feedback_5sensor1(PyObject *__pyx_self, PyObject *__pyx_v_self); /*proto*/
-static PyMethodDef __pyx_mdef_8feedback_8Feedback_5sensor1 = {"sensor1", (PyCFunction)__pyx_pw_8feedback_8Feedback_5sensor1, METH_O, 0};
-static PyObject *__pyx_pw_8feedback_8Feedback_5sensor1(PyObject *__pyx_self, PyObject *__pyx_v_self) {
+static PyObject *__pyx_pw_8feedback_8Feedback_7get_ammonium(PyObject *__pyx_self, PyObject *__pyx_v_self); /*proto*/
+static PyMethodDef __pyx_mdef_8feedback_8Feedback_7get_ammonium = {"get_ammonium", (PyCFunction)__pyx_pw_8feedback_8Feedback_7get_ammonium, METH_O, 0};
+static PyObject *__pyx_pw_8feedback_8Feedback_7get_ammonium(PyObject *__pyx_self, PyObject *__pyx_v_self) {
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("get_ammonium (wrapper)", 0);
+  __pyx_r = __pyx_pf_8feedback_8Feedback_6get_ammonium(__pyx_self, ((PyObject *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_8feedback_8Feedback_6get_ammonium(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("get_ammonium", 0);
+
+  /* "feedback.py":79
+ *     '''
+ *     def get_ammonium(self):
+ *         return self.current_ammonium             # <<<<<<<<<<<<<<
+ * 
+ *     def get_magnesium(self):
+ */
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_current_ammonium); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 79, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* "feedback.py":78
+ *         Requires: N/A
+ *     '''
+ *     def get_ammonium(self):             # <<<<<<<<<<<<<<
+ *         return self.current_ammonium
+ * 
+ */
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("feedback.Feedback.get_ammonium", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "feedback.py":81
+ *         return self.current_ammonium
+ * 
+ *     def get_magnesium(self):             # <<<<<<<<<<<<<<
+ *         return self.current_magnesium
+ * 
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_8feedback_8Feedback_9get_magnesium(PyObject *__pyx_self, PyObject *__pyx_v_self); /*proto*/
+static PyMethodDef __pyx_mdef_8feedback_8Feedback_9get_magnesium = {"get_magnesium", (PyCFunction)__pyx_pw_8feedback_8Feedback_9get_magnesium, METH_O, 0};
+static PyObject *__pyx_pw_8feedback_8Feedback_9get_magnesium(PyObject *__pyx_self, PyObject *__pyx_v_self) {
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("get_magnesium (wrapper)", 0);
+  __pyx_r = __pyx_pf_8feedback_8Feedback_8get_magnesium(__pyx_self, ((PyObject *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_8feedback_8Feedback_8get_magnesium(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("get_magnesium", 0);
+
+  /* "feedback.py":82
+ * 
+ *     def get_magnesium(self):
+ *         return self.current_magnesium             # <<<<<<<<<<<<<<
+ * 
+ *     def get_calcium(self):
+ */
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_current_magnesium); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 82, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* "feedback.py":81
+ *         return self.current_ammonium
+ * 
+ *     def get_magnesium(self):             # <<<<<<<<<<<<<<
+ *         return self.current_magnesium
+ * 
+ */
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("feedback.Feedback.get_magnesium", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "feedback.py":84
+ *         return self.current_magnesium
+ * 
+ *     def get_calcium(self):             # <<<<<<<<<<<<<<
+ *         return 1
+ * 
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_8feedback_8Feedback_11get_calcium(PyObject *__pyx_self, PyObject *__pyx_v_self); /*proto*/
+static PyMethodDef __pyx_mdef_8feedback_8Feedback_11get_calcium = {"get_calcium", (PyCFunction)__pyx_pw_8feedback_8Feedback_11get_calcium, METH_O, 0};
+static PyObject *__pyx_pw_8feedback_8Feedback_11get_calcium(PyObject *__pyx_self, PyObject *__pyx_v_self) {
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("get_calcium (wrapper)", 0);
+  __pyx_r = __pyx_pf_8feedback_8Feedback_10get_calcium(__pyx_self, ((PyObject *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_8feedback_8Feedback_10get_calcium(CYTHON_UNUSED PyObject *__pyx_self, CYTHON_UNUSED PyObject *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("get_calcium", 0);
+
+  /* "feedback.py":85
+ * 
+ *     def get_calcium(self):
+ *         return 1             # <<<<<<<<<<<<<<
+ * 
+ *     def get_phosphorus(self):
+ */
+  __Pyx_XDECREF(__pyx_r);
+  __Pyx_INCREF(__pyx_int_1);
+  __pyx_r = __pyx_int_1;
+  goto __pyx_L0;
+
+  /* "feedback.py":84
+ *         return self.current_magnesium
+ * 
+ *     def get_calcium(self):             # <<<<<<<<<<<<<<
+ *         return 1
+ * 
+ */
+
+  /* function exit code */
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "feedback.py":87
+ *         return 1
+ * 
+ *     def get_phosphorus(self):             # <<<<<<<<<<<<<<
+ *         return 1
+ * 
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_8feedback_8Feedback_13get_phosphorus(PyObject *__pyx_self, PyObject *__pyx_v_self); /*proto*/
+static PyMethodDef __pyx_mdef_8feedback_8Feedback_13get_phosphorus = {"get_phosphorus", (PyCFunction)__pyx_pw_8feedback_8Feedback_13get_phosphorus, METH_O, 0};
+static PyObject *__pyx_pw_8feedback_8Feedback_13get_phosphorus(PyObject *__pyx_self, PyObject *__pyx_v_self) {
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("get_phosphorus (wrapper)", 0);
+  __pyx_r = __pyx_pf_8feedback_8Feedback_12get_phosphorus(__pyx_self, ((PyObject *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_8feedback_8Feedback_12get_phosphorus(CYTHON_UNUSED PyObject *__pyx_self, CYTHON_UNUSED PyObject *__pyx_v_self) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("get_phosphorus", 0);
+
+  /* "feedback.py":88
+ * 
+ *     def get_phosphorus(self):
+ *         return 1             # <<<<<<<<<<<<<<
+ * 
+ *     '''
+ */
+  __Pyx_XDECREF(__pyx_r);
+  __Pyx_INCREF(__pyx_int_1);
+  __pyx_r = __pyx_int_1;
+  goto __pyx_L0;
+
+  /* "feedback.py":87
+ *         return 1
+ * 
+ *     def get_phosphorus(self):             # <<<<<<<<<<<<<<
+ *         return 1
+ * 
+ */
+
+  /* function exit code */
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "feedback.py":94
+ *         Requires: Sensor output WIP
+ *     '''
+ *     def sensor1(self):             # <<<<<<<<<<<<<<
+ *         if (self.current_ammonium < self.ammonium):
+ *             #actuator1.release()
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_8feedback_8Feedback_15sensor1(PyObject *__pyx_self, PyObject *__pyx_v_self); /*proto*/
+static PyMethodDef __pyx_mdef_8feedback_8Feedback_15sensor1 = {"sensor1", (PyCFunction)__pyx_pw_8feedback_8Feedback_15sensor1, METH_O, 0};
+static PyObject *__pyx_pw_8feedback_8Feedback_15sensor1(PyObject *__pyx_self, PyObject *__pyx_v_self) {
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("sensor1 (wrapper)", 0);
-  __pyx_r = __pyx_pf_8feedback_8Feedback_4sensor1(__pyx_self, ((PyObject *)__pyx_v_self));
+  __pyx_r = __pyx_pf_8feedback_8Feedback_14sensor1(__pyx_self, ((PyObject *)__pyx_v_self));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_8feedback_8Feedback_4sensor1(CYTHON_UNUSED PyObject *__pyx_self, CYTHON_UNUSED PyObject *__pyx_v_self) {
+static PyObject *__pyx_pf_8feedback_8Feedback_14sensor1(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  PyObject *__pyx_t_3 = NULL;
+  int __pyx_t_4;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("sensor1", 0);
+
+  /* "feedback.py":95
+ *     '''
+ *     def sensor1(self):
+ *         if (self.current_ammonium < self.ammonium):             # <<<<<<<<<<<<<<
+ *             #actuator1.release()
+ *             self.current_ammonium += .5
+ */
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_current_ammonium); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 95, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_ammonium); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 95, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_3 = PyObject_RichCompare(__pyx_t_1, __pyx_t_2, Py_LT); __Pyx_XGOTREF(__pyx_t_3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 95, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_4 = __Pyx_PyObject_IsTrue(__pyx_t_3); if (unlikely(__pyx_t_4 < 0)) __PYX_ERR(0, 95, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  if (__pyx_t_4) {
+
+    /* "feedback.py":97
+ *         if (self.current_ammonium < self.ammonium):
+ *             #actuator1.release()
+ *             self.current_ammonium += .5             # <<<<<<<<<<<<<<
+ *             print("Nutrient Level: ", round(self.current_ammonium, 2), "ML Level: ", round(self.ammonium, 2), "Release ammonium")
+ *             pass
+ */
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_current_ammonium); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 97, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_2 = __Pyx_PyFloat_AddObjC(__pyx_t_3, __pyx_float__5, .5, 1, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 97, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_current_ammonium, __pyx_t_2) < 0) __PYX_ERR(0, 97, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+    /* "feedback.py":98
+ *             #actuator1.release()
+ *             self.current_ammonium += .5
+ *             print("Nutrient Level: ", round(self.current_ammonium, 2), "ML Level: ", round(self.ammonium, 2), "Release ammonium")             # <<<<<<<<<<<<<<
+ *             pass
+ *         else:
+ */
+    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_current_ammonium); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 98, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 98, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_GIVEREF(__pyx_t_2);
+    PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_2);
+    __Pyx_INCREF(__pyx_int_2);
+    __Pyx_GIVEREF(__pyx_int_2);
+    PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_int_2);
+    __pyx_t_2 = 0;
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_round, __pyx_t_3, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 98, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_ammonium); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 98, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 98, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_GIVEREF(__pyx_t_3);
+    PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_t_3);
+    __Pyx_INCREF(__pyx_int_2);
+    __Pyx_GIVEREF(__pyx_int_2);
+    PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_int_2);
+    __pyx_t_3 = 0;
+    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_round, __pyx_t_1, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 98, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    __pyx_t_1 = PyTuple_New(5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 98, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_INCREF(__pyx_kp_s_Nutrient_Level);
+    __Pyx_GIVEREF(__pyx_kp_s_Nutrient_Level);
+    PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_kp_s_Nutrient_Level);
+    __Pyx_GIVEREF(__pyx_t_2);
+    PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_t_2);
+    __Pyx_INCREF(__pyx_kp_s_ML_Level);
+    __Pyx_GIVEREF(__pyx_kp_s_ML_Level);
+    PyTuple_SET_ITEM(__pyx_t_1, 2, __pyx_kp_s_ML_Level);
+    __Pyx_GIVEREF(__pyx_t_3);
+    PyTuple_SET_ITEM(__pyx_t_1, 3, __pyx_t_3);
+    __Pyx_INCREF(__pyx_kp_s_Release_ammonium);
+    __Pyx_GIVEREF(__pyx_kp_s_Release_ammonium);
+    PyTuple_SET_ITEM(__pyx_t_1, 4, __pyx_kp_s_Release_ammonium);
+    __pyx_t_2 = 0;
+    __pyx_t_3 = 0;
+    if (__Pyx_PrintOne(0, __pyx_t_1) < 0) __PYX_ERR(0, 98, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+    /* "feedback.py":95
+ *     '''
+ *     def sensor1(self):
+ *         if (self.current_ammonium < self.ammonium):             # <<<<<<<<<<<<<<
+ *             #actuator1.release()
+ *             self.current_ammonium += .5
+ */
+    goto __pyx_L3;
+  }
+
+  /* "feedback.py":101
+ *             pass
+ *         else:
+ *             print("Nutrient Level: ", round(self.current_ammonium, 2) , "ML Level: ", round(self.ammonium, 2), "Don't release ammonium")             # <<<<<<<<<<<<<<
+ *         pass
+ * 
+ */
+  /*else*/ {
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_current_ammonium); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 101, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 101, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_GIVEREF(__pyx_t_1);
+    PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_1);
+    __Pyx_INCREF(__pyx_int_2);
+    __Pyx_GIVEREF(__pyx_int_2);
+    PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_int_2);
+    __pyx_t_1 = 0;
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_round, __pyx_t_3, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 101, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_ammonium); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 101, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 101, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_GIVEREF(__pyx_t_3);
+    PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_3);
+    __Pyx_INCREF(__pyx_int_2);
+    __Pyx_GIVEREF(__pyx_int_2);
+    PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_int_2);
+    __pyx_t_3 = 0;
+    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_round, __pyx_t_2, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 101, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __pyx_t_2 = PyTuple_New(5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 101, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_INCREF(__pyx_kp_s_Nutrient_Level);
+    __Pyx_GIVEREF(__pyx_kp_s_Nutrient_Level);
+    PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_kp_s_Nutrient_Level);
+    __Pyx_GIVEREF(__pyx_t_1);
+    PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_t_1);
+    __Pyx_INCREF(__pyx_kp_s_ML_Level);
+    __Pyx_GIVEREF(__pyx_kp_s_ML_Level);
+    PyTuple_SET_ITEM(__pyx_t_2, 2, __pyx_kp_s_ML_Level);
+    __Pyx_GIVEREF(__pyx_t_3);
+    PyTuple_SET_ITEM(__pyx_t_2, 3, __pyx_t_3);
+    __Pyx_INCREF(__pyx_kp_s_Don_t_release_ammonium);
+    __Pyx_GIVEREF(__pyx_kp_s_Don_t_release_ammonium);
+    PyTuple_SET_ITEM(__pyx_t_2, 4, __pyx_kp_s_Don_t_release_ammonium);
+    __pyx_t_1 = 0;
+    __pyx_t_3 = 0;
+    if (__Pyx_PrintOne(0, __pyx_t_2) < 0) __PYX_ERR(0, 101, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  }
+  __pyx_L3:;
+
+  /* "feedback.py":94
+ *         Requires: Sensor output WIP
+ *     '''
+ *     def sensor1(self):             # <<<<<<<<<<<<<<
+ *         if (self.current_ammonium < self.ammonium):
+ *             #actuator1.release()
+ */
 
   /* function exit code */
   __pyx_r = Py_None; __Pyx_INCREF(Py_None);
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_AddTraceback("feedback.Feedback.sensor1", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "feedback.py":40
- *     def sensor1(self):
+/* "feedback.py":104
  *         pass
+ * 
  *     def sensor2(self):             # <<<<<<<<<<<<<<
- *         pass
- *     def sensor3(self):
+ *         if (self.current_magnesium < self.magnesium):
+ *             # actuator2.release()
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_8feedback_8Feedback_7sensor2(PyObject *__pyx_self, PyObject *__pyx_v_self); /*proto*/
-static PyMethodDef __pyx_mdef_8feedback_8Feedback_7sensor2 = {"sensor2", (PyCFunction)__pyx_pw_8feedback_8Feedback_7sensor2, METH_O, 0};
-static PyObject *__pyx_pw_8feedback_8Feedback_7sensor2(PyObject *__pyx_self, PyObject *__pyx_v_self) {
+static PyObject *__pyx_pw_8feedback_8Feedback_17sensor2(PyObject *__pyx_self, PyObject *__pyx_v_self); /*proto*/
+static PyMethodDef __pyx_mdef_8feedback_8Feedback_17sensor2 = {"sensor2", (PyCFunction)__pyx_pw_8feedback_8Feedback_17sensor2, METH_O, 0};
+static PyObject *__pyx_pw_8feedback_8Feedback_17sensor2(PyObject *__pyx_self, PyObject *__pyx_v_self) {
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("sensor2 (wrapper)", 0);
-  __pyx_r = __pyx_pf_8feedback_8Feedback_6sensor2(__pyx_self, ((PyObject *)__pyx_v_self));
+  __pyx_r = __pyx_pf_8feedback_8Feedback_16sensor2(__pyx_self, ((PyObject *)__pyx_v_self));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_8feedback_8Feedback_6sensor2(CYTHON_UNUSED PyObject *__pyx_self, CYTHON_UNUSED PyObject *__pyx_v_self) {
+static PyObject *__pyx_pf_8feedback_8Feedback_16sensor2(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  PyObject *__pyx_t_3 = NULL;
+  int __pyx_t_4;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("sensor2", 0);
+
+  /* "feedback.py":105
+ * 
+ *     def sensor2(self):
+ *         if (self.current_magnesium < self.magnesium):             # <<<<<<<<<<<<<<
+ *             # actuator2.release()
+ *             self.current_magnesium += .5
+ */
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_current_magnesium); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 105, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_magnesium); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 105, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_3 = PyObject_RichCompare(__pyx_t_1, __pyx_t_2, Py_LT); __Pyx_XGOTREF(__pyx_t_3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 105, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_4 = __Pyx_PyObject_IsTrue(__pyx_t_3); if (unlikely(__pyx_t_4 < 0)) __PYX_ERR(0, 105, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  if (__pyx_t_4) {
+
+    /* "feedback.py":107
+ *         if (self.current_magnesium < self.magnesium):
+ *             # actuator2.release()
+ *             self.current_magnesium += .5             # <<<<<<<<<<<<<<
+ *             print("Nutrient Level: ", round(self.current_magnesium, 2), "ML Level: ", round(self.magnesium, 2), "Release magnesium")
+ *         else:
+ */
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_current_magnesium); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 107, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_2 = __Pyx_PyFloat_AddObjC(__pyx_t_3, __pyx_float__5, .5, 1, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 107, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_current_magnesium, __pyx_t_2) < 0) __PYX_ERR(0, 107, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+    /* "feedback.py":108
+ *             # actuator2.release()
+ *             self.current_magnesium += .5
+ *             print("Nutrient Level: ", round(self.current_magnesium, 2), "ML Level: ", round(self.magnesium, 2), "Release magnesium")             # <<<<<<<<<<<<<<
+ *         else:
+ *             print("Nutrient Level: ", round(self.current_magnesium, 2), "ML Level: ", round(self.ammonium, 2), "Don't release magnesium")
+ */
+    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_current_magnesium); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 108, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 108, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_GIVEREF(__pyx_t_2);
+    PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_2);
+    __Pyx_INCREF(__pyx_int_2);
+    __Pyx_GIVEREF(__pyx_int_2);
+    PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_int_2);
+    __pyx_t_2 = 0;
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_round, __pyx_t_3, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 108, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_magnesium); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 108, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 108, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_GIVEREF(__pyx_t_3);
+    PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_t_3);
+    __Pyx_INCREF(__pyx_int_2);
+    __Pyx_GIVEREF(__pyx_int_2);
+    PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_int_2);
+    __pyx_t_3 = 0;
+    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_round, __pyx_t_1, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 108, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    __pyx_t_1 = PyTuple_New(5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 108, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_INCREF(__pyx_kp_s_Nutrient_Level);
+    __Pyx_GIVEREF(__pyx_kp_s_Nutrient_Level);
+    PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_kp_s_Nutrient_Level);
+    __Pyx_GIVEREF(__pyx_t_2);
+    PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_t_2);
+    __Pyx_INCREF(__pyx_kp_s_ML_Level);
+    __Pyx_GIVEREF(__pyx_kp_s_ML_Level);
+    PyTuple_SET_ITEM(__pyx_t_1, 2, __pyx_kp_s_ML_Level);
+    __Pyx_GIVEREF(__pyx_t_3);
+    PyTuple_SET_ITEM(__pyx_t_1, 3, __pyx_t_3);
+    __Pyx_INCREF(__pyx_kp_s_Release_magnesium);
+    __Pyx_GIVEREF(__pyx_kp_s_Release_magnesium);
+    PyTuple_SET_ITEM(__pyx_t_1, 4, __pyx_kp_s_Release_magnesium);
+    __pyx_t_2 = 0;
+    __pyx_t_3 = 0;
+    if (__Pyx_PrintOne(0, __pyx_t_1) < 0) __PYX_ERR(0, 108, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+    /* "feedback.py":105
+ * 
+ *     def sensor2(self):
+ *         if (self.current_magnesium < self.magnesium):             # <<<<<<<<<<<<<<
+ *             # actuator2.release()
+ *             self.current_magnesium += .5
+ */
+    goto __pyx_L3;
+  }
+
+  /* "feedback.py":110
+ *             print("Nutrient Level: ", round(self.current_magnesium, 2), "ML Level: ", round(self.magnesium, 2), "Release magnesium")
+ *         else:
+ *             print("Nutrient Level: ", round(self.current_magnesium, 2), "ML Level: ", round(self.ammonium, 2), "Don't release magnesium")             # <<<<<<<<<<<<<<
+ * 
+ *         pass
+ */
+  /*else*/ {
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_current_magnesium); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 110, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 110, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_GIVEREF(__pyx_t_1);
+    PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_1);
+    __Pyx_INCREF(__pyx_int_2);
+    __Pyx_GIVEREF(__pyx_int_2);
+    PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_int_2);
+    __pyx_t_1 = 0;
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_round, __pyx_t_3, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 110, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_ammonium); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 110, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 110, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_GIVEREF(__pyx_t_3);
+    PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_3);
+    __Pyx_INCREF(__pyx_int_2);
+    __Pyx_GIVEREF(__pyx_int_2);
+    PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_int_2);
+    __pyx_t_3 = 0;
+    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_round, __pyx_t_2, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 110, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __pyx_t_2 = PyTuple_New(5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 110, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_INCREF(__pyx_kp_s_Nutrient_Level);
+    __Pyx_GIVEREF(__pyx_kp_s_Nutrient_Level);
+    PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_kp_s_Nutrient_Level);
+    __Pyx_GIVEREF(__pyx_t_1);
+    PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_t_1);
+    __Pyx_INCREF(__pyx_kp_s_ML_Level);
+    __Pyx_GIVEREF(__pyx_kp_s_ML_Level);
+    PyTuple_SET_ITEM(__pyx_t_2, 2, __pyx_kp_s_ML_Level);
+    __Pyx_GIVEREF(__pyx_t_3);
+    PyTuple_SET_ITEM(__pyx_t_2, 3, __pyx_t_3);
+    __Pyx_INCREF(__pyx_kp_s_Don_t_release_magnesium);
+    __Pyx_GIVEREF(__pyx_kp_s_Don_t_release_magnesium);
+    PyTuple_SET_ITEM(__pyx_t_2, 4, __pyx_kp_s_Don_t_release_magnesium);
+    __pyx_t_1 = 0;
+    __pyx_t_3 = 0;
+    if (__Pyx_PrintOne(0, __pyx_t_2) < 0) __PYX_ERR(0, 110, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  }
+  __pyx_L3:;
+
+  /* "feedback.py":104
+ *         pass
+ * 
+ *     def sensor2(self):             # <<<<<<<<<<<<<<
+ *         if (self.current_magnesium < self.magnesium):
+ *             # actuator2.release()
+ */
 
   /* function exit code */
   __pyx_r = Py_None; __Pyx_INCREF(Py_None);
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_AddTraceback("feedback.Feedback.sensor2", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "feedback.py":42
- *     def sensor2(self):
+/* "feedback.py":113
+ * 
  *         pass
  *     def sensor3(self):             # <<<<<<<<<<<<<<
- *         pass
- *     def sensor4(self):
+ *         nutrient = self.get_calcium()
+ *         if (nutrient < self.calcium):
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_8feedback_8Feedback_9sensor3(PyObject *__pyx_self, PyObject *__pyx_v_self); /*proto*/
-static PyMethodDef __pyx_mdef_8feedback_8Feedback_9sensor3 = {"sensor3", (PyCFunction)__pyx_pw_8feedback_8Feedback_9sensor3, METH_O, 0};
-static PyObject *__pyx_pw_8feedback_8Feedback_9sensor3(PyObject *__pyx_self, PyObject *__pyx_v_self) {
+static PyObject *__pyx_pw_8feedback_8Feedback_19sensor3(PyObject *__pyx_self, PyObject *__pyx_v_self); /*proto*/
+static PyMethodDef __pyx_mdef_8feedback_8Feedback_19sensor3 = {"sensor3", (PyCFunction)__pyx_pw_8feedback_8Feedback_19sensor3, METH_O, 0};
+static PyObject *__pyx_pw_8feedback_8Feedback_19sensor3(PyObject *__pyx_self, PyObject *__pyx_v_self) {
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("sensor3 (wrapper)", 0);
-  __pyx_r = __pyx_pf_8feedback_8Feedback_8sensor3(__pyx_self, ((PyObject *)__pyx_v_self));
+  __pyx_r = __pyx_pf_8feedback_8Feedback_18sensor3(__pyx_self, ((PyObject *)__pyx_v_self));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_8feedback_8Feedback_8sensor3(CYTHON_UNUSED PyObject *__pyx_self, CYTHON_UNUSED PyObject *__pyx_v_self) {
+static PyObject *__pyx_pf_8feedback_8Feedback_18sensor3(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_self) {
+  PyObject *__pyx_v_nutrient = NULL;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  PyObject *__pyx_t_3 = NULL;
+  int __pyx_t_4;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("sensor3", 0);
+
+  /* "feedback.py":114
+ *         pass
+ *     def sensor3(self):
+ *         nutrient = self.get_calcium()             # <<<<<<<<<<<<<<
+ *         if (nutrient < self.calcium):
+ *             # actuator3.release()
+ */
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_get_calcium); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 114, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_3 = NULL;
+  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
+    __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_2);
+    if (likely(__pyx_t_3)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
+      __Pyx_INCREF(__pyx_t_3);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_2, function);
+    }
+  }
+  __pyx_t_1 = (__pyx_t_3) ? __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_3) : __Pyx_PyObject_CallNoArg(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 114, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_v_nutrient = __pyx_t_1;
+  __pyx_t_1 = 0;
+
+  /* "feedback.py":115
+ *     def sensor3(self):
+ *         nutrient = self.get_calcium()
+ *         if (nutrient < self.calcium):             # <<<<<<<<<<<<<<
+ *             # actuator3.release()
+ *             pass
+ */
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_calcium); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 115, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_2 = PyObject_RichCompare(__pyx_v_nutrient, __pyx_t_1, Py_LT); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 115, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_4 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_4 < 0)) __PYX_ERR(0, 115, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (__pyx_t_4) {
+  }
+
+  /* "feedback.py":113
+ * 
+ *         pass
+ *     def sensor3(self):             # <<<<<<<<<<<<<<
+ *         nutrient = self.get_calcium()
+ *         if (nutrient < self.calcium):
+ */
 
   /* function exit code */
   __pyx_r = Py_None; __Pyx_INCREF(Py_None);
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_AddTraceback("feedback.Feedback.sensor3", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XDECREF(__pyx_v_nutrient);
   __Pyx_XGIVEREF(__pyx_r);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "feedback.py":44
- *     def sensor3(self):
+/* "feedback.py":119
+ *             pass
  *         pass
  *     def sensor4(self):             # <<<<<<<<<<<<<<
- *         pass
- * 
+ *         nutrient = self.get_phosphorus()
+ *         if (nutrient < self.phosphorous):
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_8feedback_8Feedback_11sensor4(PyObject *__pyx_self, PyObject *__pyx_v_self); /*proto*/
-static PyMethodDef __pyx_mdef_8feedback_8Feedback_11sensor4 = {"sensor4", (PyCFunction)__pyx_pw_8feedback_8Feedback_11sensor4, METH_O, 0};
-static PyObject *__pyx_pw_8feedback_8Feedback_11sensor4(PyObject *__pyx_self, PyObject *__pyx_v_self) {
+static PyObject *__pyx_pw_8feedback_8Feedback_21sensor4(PyObject *__pyx_self, PyObject *__pyx_v_self); /*proto*/
+static PyMethodDef __pyx_mdef_8feedback_8Feedback_21sensor4 = {"sensor4", (PyCFunction)__pyx_pw_8feedback_8Feedback_21sensor4, METH_O, 0};
+static PyObject *__pyx_pw_8feedback_8Feedback_21sensor4(PyObject *__pyx_self, PyObject *__pyx_v_self) {
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("sensor4 (wrapper)", 0);
-  __pyx_r = __pyx_pf_8feedback_8Feedback_10sensor4(__pyx_self, ((PyObject *)__pyx_v_self));
+  __pyx_r = __pyx_pf_8feedback_8Feedback_20sensor4(__pyx_self, ((PyObject *)__pyx_v_self));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_8feedback_8Feedback_10sensor4(CYTHON_UNUSED PyObject *__pyx_self, CYTHON_UNUSED PyObject *__pyx_v_self) {
+static PyObject *__pyx_pf_8feedback_8Feedback_20sensor4(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_self) {
+  PyObject *__pyx_v_nutrient = NULL;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  PyObject *__pyx_t_3 = NULL;
+  int __pyx_t_4;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("sensor4", 0);
+
+  /* "feedback.py":120
+ *         pass
+ *     def sensor4(self):
+ *         nutrient = self.get_phosphorus()             # <<<<<<<<<<<<<<
+ *         if (nutrient < self.phosphorous):
+ *             # actuator4.release()
+ */
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_get_phosphorus); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 120, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_3 = NULL;
+  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
+    __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_2);
+    if (likely(__pyx_t_3)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_2);
+      __Pyx_INCREF(__pyx_t_3);
+      __Pyx_INCREF(function);
+      __Pyx_DECREF_SET(__pyx_t_2, function);
+    }
+  }
+  __pyx_t_1 = (__pyx_t_3) ? __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_3) : __Pyx_PyObject_CallNoArg(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 120, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_v_nutrient = __pyx_t_1;
+  __pyx_t_1 = 0;
+
+  /* "feedback.py":121
+ *     def sensor4(self):
+ *         nutrient = self.get_phosphorus()
+ *         if (nutrient < self.phosphorous):             # <<<<<<<<<<<<<<
+ *             # actuator4.release()
+ *             pass
+ */
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_phosphorous); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 121, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_2 = PyObject_RichCompare(__pyx_v_nutrient, __pyx_t_1, Py_LT); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 121, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_4 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_4 < 0)) __PYX_ERR(0, 121, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (__pyx_t_4) {
+  }
+
+  /* "feedback.py":119
+ *             pass
+ *         pass
+ *     def sensor4(self):             # <<<<<<<<<<<<<<
+ *         nutrient = self.get_phosphorus()
+ *         if (nutrient < self.phosphorous):
+ */
 
   /* function exit code */
   __pyx_r = Py_None; __Pyx_INCREF(Py_None);
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_AddTraceback("feedback.Feedback.sensor4", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XDECREF(__pyx_v_nutrient);
   __Pyx_XGIVEREF(__pyx_r);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "feedback.py":47
+/* "feedback.py":126
  *         pass
  * 
- *     def run(self):             # <<<<<<<<<<<<<<
- * 
- *         while(True):
+ *     def nutrient_absoption(self):             # <<<<<<<<<<<<<<
+ *         self.current_ammonium -= .05
+ *         self.current_magnesium -= .05
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_8feedback_8Feedback_13run(PyObject *__pyx_self, PyObject *__pyx_v_self); /*proto*/
-static PyMethodDef __pyx_mdef_8feedback_8Feedback_13run = {"run", (PyCFunction)__pyx_pw_8feedback_8Feedback_13run, METH_O, 0};
-static PyObject *__pyx_pw_8feedback_8Feedback_13run(PyObject *__pyx_self, PyObject *__pyx_v_self) {
+static PyObject *__pyx_pw_8feedback_8Feedback_23nutrient_absoption(PyObject *__pyx_self, PyObject *__pyx_v_self); /*proto*/
+static PyMethodDef __pyx_mdef_8feedback_8Feedback_23nutrient_absoption = {"nutrient_absoption", (PyCFunction)__pyx_pw_8feedback_8Feedback_23nutrient_absoption, METH_O, 0};
+static PyObject *__pyx_pw_8feedback_8Feedback_23nutrient_absoption(PyObject *__pyx_self, PyObject *__pyx_v_self) {
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
-  __Pyx_RefNannySetupContext("run (wrapper)", 0);
-  __pyx_r = __pyx_pf_8feedback_8Feedback_12run(__pyx_self, ((PyObject *)__pyx_v_self));
+  __Pyx_RefNannySetupContext("nutrient_absoption (wrapper)", 0);
+  __pyx_r = __pyx_pf_8feedback_8Feedback_22nutrient_absoption(__pyx_self, ((PyObject *)__pyx_v_self));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_8feedback_8Feedback_12run(CYTHON_UNUSED PyObject *__pyx_self, CYTHON_UNUSED PyObject *__pyx_v_self) {
+static PyObject *__pyx_pf_8feedback_8Feedback_22nutrient_absoption(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
-  __Pyx_RefNannySetupContext("run", 0);
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("nutrient_absoption", 0);
 
-  /* "feedback.py":49
- *     def run(self):
+  /* "feedback.py":127
  * 
- *         while(True):             # <<<<<<<<<<<<<<
- *             #updateML()
- *             pass
+ *     def nutrient_absoption(self):
+ *         self.current_ammonium -= .05             # <<<<<<<<<<<<<<
+ *         self.current_magnesium -= .05
+ *         self.current_calcium -= .05
  */
-  while (1) {
-  }
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_current_ammonium); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 127, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_2 = __Pyx_PyFloat_SubtractObjC(__pyx_t_1, __pyx_float__05, .05, 1, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 127, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_current_ammonium, __pyx_t_2) < 0) __PYX_ERR(0, 127, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "feedback.py":47
+  /* "feedback.py":128
+ *     def nutrient_absoption(self):
+ *         self.current_ammonium -= .05
+ *         self.current_magnesium -= .05             # <<<<<<<<<<<<<<
+ *         self.current_calcium -= .05
+ *         self.current_phosphorous -= .05
+ */
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_current_magnesium); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 128, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_1 = __Pyx_PyFloat_SubtractObjC(__pyx_t_2, __pyx_float__05, .05, 1, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 128, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_current_magnesium, __pyx_t_1) < 0) __PYX_ERR(0, 128, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+  /* "feedback.py":129
+ *         self.current_ammonium -= .05
+ *         self.current_magnesium -= .05
+ *         self.current_calcium -= .05             # <<<<<<<<<<<<<<
+ *         self.current_phosphorous -= .05
+ * 
+ */
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_current_calcium); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 129, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_2 = __Pyx_PyFloat_SubtractObjC(__pyx_t_1, __pyx_float__05, .05, 1, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 129, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_current_calcium, __pyx_t_2) < 0) __PYX_ERR(0, 129, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "feedback.py":130
+ *         self.current_magnesium -= .05
+ *         self.current_calcium -= .05
+ *         self.current_phosphorous -= .05             # <<<<<<<<<<<<<<
+ * 
+ *     '''
+ */
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_current_phosphorous); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 130, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_1 = __Pyx_PyFloat_SubtractObjC(__pyx_t_2, __pyx_float__05, .05, 1, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 130, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_current_phosphorous, __pyx_t_1) < 0) __PYX_ERR(0, 130, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+  /* "feedback.py":126
  *         pass
  * 
+ *     def nutrient_absoption(self):             # <<<<<<<<<<<<<<
+ *         self.current_ammonium -= .05
+ *         self.current_magnesium -= .05
+ */
+
+  /* function exit code */
+  __pyx_r = Py_None; __Pyx_INCREF(Py_None);
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_AddTraceback("feedback.Feedback.nutrient_absoption", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "feedback.py":136
+ *         Requires: everything else to work
+ *     '''
  *     def run(self):             # <<<<<<<<<<<<<<
+ *         print("Running Loop")
+ *         while(True):
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_8feedback_8Feedback_25run(PyObject *__pyx_self, PyObject *__pyx_v_self); /*proto*/
+static PyMethodDef __pyx_mdef_8feedback_8Feedback_25run = {"run", (PyCFunction)__pyx_pw_8feedback_8Feedback_25run, METH_O, 0};
+static PyObject *__pyx_pw_8feedback_8Feedback_25run(PyObject *__pyx_self, PyObject *__pyx_v_self) {
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("run (wrapper)", 0);
+  __pyx_r = __pyx_pf_8feedback_8Feedback_24run(__pyx_self, ((PyObject *)__pyx_v_self));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_8feedback_8Feedback_24run(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_self) {
+  PyObject *__pyx_v_rand = NULL;
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  PyObject *__pyx_t_3 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("run", 0);
+
+  /* "feedback.py":137
+ *     '''
+ *     def run(self):
+ *         print("Running Loop")             # <<<<<<<<<<<<<<
+ *         while(True):
+ *             time.sleep(2)
+ */
+  if (__Pyx_PrintOne(0, __pyx_kp_s_Running_Loop) < 0) __PYX_ERR(0, 137, __pyx_L1_error)
+
+  /* "feedback.py":138
+ *     def run(self):
+ *         print("Running Loop")
+ *         while(True):             # <<<<<<<<<<<<<<
+ *             time.sleep(2)
+ *             self.nutrient_absoption()
+ */
+  while (1) {
+
+    /* "feedback.py":139
+ *         print("Running Loop")
+ *         while(True):
+ *             time.sleep(2)             # <<<<<<<<<<<<<<
+ *             self.nutrient_absoption()
+ *             rand = random.randint(0, 1)
+ */
+    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_time); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 139, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_sleep); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 139, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __pyx_t_2 = NULL;
+    if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_3))) {
+      __pyx_t_2 = PyMethod_GET_SELF(__pyx_t_3);
+      if (likely(__pyx_t_2)) {
+        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_3);
+        __Pyx_INCREF(__pyx_t_2);
+        __Pyx_INCREF(function);
+        __Pyx_DECREF_SET(__pyx_t_3, function);
+      }
+    }
+    __pyx_t_1 = (__pyx_t_2) ? __Pyx_PyObject_Call2Args(__pyx_t_3, __pyx_t_2, __pyx_int_2) : __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_int_2);
+    __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 139, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+    /* "feedback.py":140
+ *         while(True):
+ *             time.sleep(2)
+ *             self.nutrient_absoption()             # <<<<<<<<<<<<<<
+ *             rand = random.randint(0, 1)
+ *             print("Machine Model Output: ", rand)
+ */
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_nutrient_absoption); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 140, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_2 = NULL;
+    if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_3))) {
+      __pyx_t_2 = PyMethod_GET_SELF(__pyx_t_3);
+      if (likely(__pyx_t_2)) {
+        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_3);
+        __Pyx_INCREF(__pyx_t_2);
+        __Pyx_INCREF(function);
+        __Pyx_DECREF_SET(__pyx_t_3, function);
+      }
+    }
+    __pyx_t_1 = (__pyx_t_2) ? __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_2) : __Pyx_PyObject_CallNoArg(__pyx_t_3);
+    __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 140, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+    /* "feedback.py":141
+ *             time.sleep(2)
+ *             self.nutrient_absoption()
+ *             rand = random.randint(0, 1)             # <<<<<<<<<<<<<<
+ *             print("Machine Model Output: ", rand)
+ *             self.updateML(rand)
+ */
+    __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_random); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 141, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_randint); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 141, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_tuple_, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 141, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __Pyx_XDECREF_SET(__pyx_v_rand, __pyx_t_1);
+    __pyx_t_1 = 0;
+
+    /* "feedback.py":142
+ *             self.nutrient_absoption()
+ *             rand = random.randint(0, 1)
+ *             print("Machine Model Output: ", rand)             # <<<<<<<<<<<<<<
+ *             self.updateML(rand)
  * 
+ */
+    __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 142, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_INCREF(__pyx_kp_s_Machine_Model_Output);
+    __Pyx_GIVEREF(__pyx_kp_s_Machine_Model_Output);
+    PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_kp_s_Machine_Model_Output);
+    __Pyx_INCREF(__pyx_v_rand);
+    __Pyx_GIVEREF(__pyx_v_rand);
+    PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_v_rand);
+    if (__Pyx_PrintOne(0, __pyx_t_1) < 0) __PYX_ERR(0, 142, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+    /* "feedback.py":143
+ *             rand = random.randint(0, 1)
+ *             print("Machine Model Output: ", rand)
+ *             self.updateML(rand)             # <<<<<<<<<<<<<<
+ * 
+ *             self.sensor1()
+ */
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_updateML); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 143, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_2 = NULL;
+    if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_3))) {
+      __pyx_t_2 = PyMethod_GET_SELF(__pyx_t_3);
+      if (likely(__pyx_t_2)) {
+        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_3);
+        __Pyx_INCREF(__pyx_t_2);
+        __Pyx_INCREF(function);
+        __Pyx_DECREF_SET(__pyx_t_3, function);
+      }
+    }
+    __pyx_t_1 = (__pyx_t_2) ? __Pyx_PyObject_Call2Args(__pyx_t_3, __pyx_t_2, __pyx_v_rand) : __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_v_rand);
+    __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 143, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+    /* "feedback.py":145
+ *             self.updateML(rand)
+ * 
+ *             self.sensor1()             # <<<<<<<<<<<<<<
+ *             self.sensor2()
+ *             #self.sensor3()
+ */
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_sensor1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 145, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_2 = NULL;
+    if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_3))) {
+      __pyx_t_2 = PyMethod_GET_SELF(__pyx_t_3);
+      if (likely(__pyx_t_2)) {
+        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_3);
+        __Pyx_INCREF(__pyx_t_2);
+        __Pyx_INCREF(function);
+        __Pyx_DECREF_SET(__pyx_t_3, function);
+      }
+    }
+    __pyx_t_1 = (__pyx_t_2) ? __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_2) : __Pyx_PyObject_CallNoArg(__pyx_t_3);
+    __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 145, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+    /* "feedback.py":146
+ * 
+ *             self.sensor1()
+ *             self.sensor2()             # <<<<<<<<<<<<<<
+ *             #self.sensor3()
+ *             #self.sensor4()
+ */
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_sensor2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 146, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_2 = NULL;
+    if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_3))) {
+      __pyx_t_2 = PyMethod_GET_SELF(__pyx_t_3);
+      if (likely(__pyx_t_2)) {
+        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_3);
+        __Pyx_INCREF(__pyx_t_2);
+        __Pyx_INCREF(function);
+        __Pyx_DECREF_SET(__pyx_t_3, function);
+      }
+    }
+    __pyx_t_1 = (__pyx_t_2) ? __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_2) : __Pyx_PyObject_CallNoArg(__pyx_t_3);
+    __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 146, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  }
+
+  /* "feedback.py":136
+ *         Requires: everything else to work
+ *     '''
+ *     def run(self):             # <<<<<<<<<<<<<<
+ *         print("Running Loop")
  *         while(True):
  */
 
   /* function exit code */
   __pyx_r = Py_None; __Pyx_INCREF(Py_None);
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_AddTraceback("feedback.Feedback.run", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XDECREF(__pyx_v_rand);
   __Pyx_XGIVEREF(__pyx_r);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
@@ -2003,31 +3551,58 @@ static struct PyModuleDef __pyx_moduledef = {
 #endif
 
 static __Pyx_StringTabEntry __pyx_string_tab[] = {
+  {&__pyx_kp_s_Current_model, __pyx_k_Current_model, sizeof(__pyx_k_Current_model), 0, 0, 1, 0},
+  {&__pyx_kp_s_Don_t_release_ammonium, __pyx_k_Don_t_release_ammonium, sizeof(__pyx_k_Don_t_release_ammonium), 0, 0, 1, 0},
+  {&__pyx_kp_s_Don_t_release_magnesium, __pyx_k_Don_t_release_magnesium, sizeof(__pyx_k_Don_t_release_magnesium), 0, 0, 1, 0},
   {&__pyx_n_s_Enum, __pyx_k_Enum, sizeof(__pyx_k_Enum), 0, 0, 1, 1},
   {&__pyx_n_s_Feedback, __pyx_k_Feedback, sizeof(__pyx_k_Feedback), 0, 0, 1, 1},
   {&__pyx_kp_s_Feedback_Loop_Completed, __pyx_k_Feedback_Loop_Completed, sizeof(__pyx_k_Feedback_Loop_Completed), 0, 0, 1, 0},
   {&__pyx_n_s_Feedback___init, __pyx_k_Feedback___init, sizeof(__pyx_k_Feedback___init), 0, 0, 1, 1},
+  {&__pyx_n_s_Feedback_get_ammonium, __pyx_k_Feedback_get_ammonium, sizeof(__pyx_k_Feedback_get_ammonium), 0, 0, 1, 1},
+  {&__pyx_n_s_Feedback_get_calcium, __pyx_k_Feedback_get_calcium, sizeof(__pyx_k_Feedback_get_calcium), 0, 0, 1, 1},
+  {&__pyx_n_s_Feedback_get_magnesium, __pyx_k_Feedback_get_magnesium, sizeof(__pyx_k_Feedback_get_magnesium), 0, 0, 1, 1},
+  {&__pyx_n_s_Feedback_get_phosphorus, __pyx_k_Feedback_get_phosphorus, sizeof(__pyx_k_Feedback_get_phosphorus), 0, 0, 1, 1},
+  {&__pyx_n_s_Feedback_nutrient_absoption, __pyx_k_Feedback_nutrient_absoption, sizeof(__pyx_k_Feedback_nutrient_absoption), 0, 0, 1, 1},
   {&__pyx_n_s_Feedback_run, __pyx_k_Feedback_run, sizeof(__pyx_k_Feedback_run), 0, 0, 1, 1},
   {&__pyx_n_s_Feedback_sensor1, __pyx_k_Feedback_sensor1, sizeof(__pyx_k_Feedback_sensor1), 0, 0, 1, 1},
   {&__pyx_n_s_Feedback_sensor2, __pyx_k_Feedback_sensor2, sizeof(__pyx_k_Feedback_sensor2), 0, 0, 1, 1},
   {&__pyx_n_s_Feedback_sensor3, __pyx_k_Feedback_sensor3, sizeof(__pyx_k_Feedback_sensor3), 0, 0, 1, 1},
   {&__pyx_n_s_Feedback_sensor4, __pyx_k_Feedback_sensor4, sizeof(__pyx_k_Feedback_sensor4), 0, 0, 1, 1},
   {&__pyx_n_s_Feedback_updateML, __pyx_k_Feedback_updateML, sizeof(__pyx_k_Feedback_updateML), 0, 0, 1, 1},
+  {&__pyx_n_s_Feedback_update_model, __pyx_k_Feedback_update_model, sizeof(__pyx_k_Feedback_update_model), 0, 0, 1, 1},
+  {&__pyx_kp_s_Initial_runtime_sequence, __pyx_k_Initial_runtime_sequence, sizeof(__pyx_k_Initial_runtime_sequence), 0, 0, 1, 0},
+  {&__pyx_kp_s_ML_Level, __pyx_k_ML_Level, sizeof(__pyx_k_ML_Level), 0, 0, 1, 0},
   {&__pyx_n_s_ML_input, __pyx_k_ML_input, sizeof(__pyx_k_ML_input), 0, 0, 1, 1},
+  {&__pyx_kp_s_Machine_Model_Output, __pyx_k_Machine_Model_Output, sizeof(__pyx_k_Machine_Model_Output), 0, 0, 1, 0},
   {&__pyx_n_s_Model, __pyx_k_Model, sizeof(__pyx_k_Model), 0, 0, 1, 1},
   {&__pyx_n_s_Model1, __pyx_k_Model1, sizeof(__pyx_k_Model1), 0, 0, 1, 1},
   {&__pyx_n_s_Model1___init, __pyx_k_Model1___init, sizeof(__pyx_k_Model1___init), 0, 0, 1, 1},
   {&__pyx_n_s_Model2, __pyx_k_Model2, sizeof(__pyx_k_Model2), 0, 0, 1, 1},
   {&__pyx_n_s_Model2___init, __pyx_k_Model2___init, sizeof(__pyx_k_Model2___init), 0, 0, 1, 1},
+  {&__pyx_kp_s_Nutrient_Level, __pyx_k_Nutrient_Level, sizeof(__pyx_k_Nutrient_Level), 0, 0, 1, 0},
+  {&__pyx_kp_s_Release_ammonium, __pyx_k_Release_ammonium, sizeof(__pyx_k_Release_ammonium), 0, 0, 1, 0},
+  {&__pyx_kp_s_Release_magnesium, __pyx_k_Release_magnesium, sizeof(__pyx_k_Release_magnesium), 0, 0, 1, 0},
+  {&__pyx_kp_s_Running_Loop, __pyx_k_Running_Loop, sizeof(__pyx_k_Running_Loop), 0, 0, 1, 0},
+  {&__pyx_kp_s_Setting_System_Up, __pyx_k_Setting_System_Up, sizeof(__pyx_k_Setting_System_Up), 0, 0, 1, 0},
+  {&__pyx_kp_s_Thank_you_for_using_our_nutrient, __pyx_k_Thank_you_for_using_our_nutrient, sizeof(__pyx_k_Thank_you_for_using_our_nutrient), 0, 0, 1, 0},
+  {&__pyx_kp_s_Unsucessful_value_returned_from, __pyx_k_Unsucessful_value_returned_from, sizeof(__pyx_k_Unsucessful_value_returned_from), 0, 0, 1, 0},
   {&__pyx_n_s_ammonium, __pyx_k_ammonium, sizeof(__pyx_k_ammonium), 0, 0, 1, 1},
   {&__pyx_n_s_calcium, __pyx_k_calcium, sizeof(__pyx_k_calcium), 0, 0, 1, 1},
   {&__pyx_n_s_cline_in_traceback, __pyx_k_cline_in_traceback, sizeof(__pyx_k_cline_in_traceback), 0, 0, 1, 1},
+  {&__pyx_n_s_current_ammonium, __pyx_k_current_ammonium, sizeof(__pyx_k_current_ammonium), 0, 0, 1, 1},
+  {&__pyx_n_s_current_calcium, __pyx_k_current_calcium, sizeof(__pyx_k_current_calcium), 0, 0, 1, 1},
+  {&__pyx_n_s_current_magnesium, __pyx_k_current_magnesium, sizeof(__pyx_k_current_magnesium), 0, 0, 1, 1},
+  {&__pyx_n_s_current_phosphorous, __pyx_k_current_phosphorous, sizeof(__pyx_k_current_phosphorous), 0, 0, 1, 1},
   {&__pyx_n_s_doc, __pyx_k_doc, sizeof(__pyx_k_doc), 0, 0, 1, 1},
   {&__pyx_n_s_end, __pyx_k_end, sizeof(__pyx_k_end), 0, 0, 1, 1},
   {&__pyx_n_s_enum, __pyx_k_enum, sizeof(__pyx_k_enum), 0, 0, 1, 1},
   {&__pyx_n_s_feedback, __pyx_k_feedback, sizeof(__pyx_k_feedback), 0, 0, 1, 1},
   {&__pyx_kp_s_feedback_py, __pyx_k_feedback_py, sizeof(__pyx_k_feedback_py), 0, 0, 1, 0},
   {&__pyx_n_s_file, __pyx_k_file, sizeof(__pyx_k_file), 0, 0, 1, 1},
+  {&__pyx_n_s_get_ammonium, __pyx_k_get_ammonium, sizeof(__pyx_k_get_ammonium), 0, 0, 1, 1},
+  {&__pyx_n_s_get_calcium, __pyx_k_get_calcium, sizeof(__pyx_k_get_calcium), 0, 0, 1, 1},
+  {&__pyx_n_s_get_magnesium, __pyx_k_get_magnesium, sizeof(__pyx_k_get_magnesium), 0, 0, 1, 1},
+  {&__pyx_n_s_get_phosphorus, __pyx_k_get_phosphorus, sizeof(__pyx_k_get_phosphorus), 0, 0, 1, 1},
   {&__pyx_n_s_high, __pyx_k_high, sizeof(__pyx_k_high), 0, 0, 1, 1},
   {&__pyx_n_s_import, __pyx_k_import, sizeof(__pyx_k_import), 0, 0, 1, 1},
   {&__pyx_n_s_init, __pyx_k_init, sizeof(__pyx_k_init), 0, 0, 1, 1},
@@ -2039,24 +3614,36 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_model, __pyx_k_model, sizeof(__pyx_k_model), 0, 0, 1, 1},
   {&__pyx_n_s_module, __pyx_k_module, sizeof(__pyx_k_module), 0, 0, 1, 1},
   {&__pyx_n_s_name, __pyx_k_name, sizeof(__pyx_k_name), 0, 0, 1, 1},
+  {&__pyx_n_s_name_2, __pyx_k_name_2, sizeof(__pyx_k_name_2), 0, 0, 1, 1},
+  {&__pyx_n_s_nutrient, __pyx_k_nutrient, sizeof(__pyx_k_nutrient), 0, 0, 1, 1},
+  {&__pyx_n_s_nutrient_absoption, __pyx_k_nutrient_absoption, sizeof(__pyx_k_nutrient_absoption), 0, 0, 1, 1},
+  {&__pyx_n_s_nutrient_model, __pyx_k_nutrient_model, sizeof(__pyx_k_nutrient_model), 0, 0, 1, 1},
   {&__pyx_n_s_object, __pyx_k_object, sizeof(__pyx_k_object), 0, 0, 1, 1},
+  {&__pyx_n_s_phosphorous, __pyx_k_phosphorous, sizeof(__pyx_k_phosphorous), 0, 0, 1, 1},
   {&__pyx_n_s_phosphorus, __pyx_k_phosphorus, sizeof(__pyx_k_phosphorus), 0, 0, 1, 1},
   {&__pyx_n_s_prepare, __pyx_k_prepare, sizeof(__pyx_k_prepare), 0, 0, 1, 1},
   {&__pyx_n_s_print, __pyx_k_print, sizeof(__pyx_k_print), 0, 0, 1, 1},
   {&__pyx_n_s_qualname, __pyx_k_qualname, sizeof(__pyx_k_qualname), 0, 0, 1, 1},
+  {&__pyx_n_s_rand, __pyx_k_rand, sizeof(__pyx_k_rand), 0, 0, 1, 1},
+  {&__pyx_n_s_randint, __pyx_k_randint, sizeof(__pyx_k_randint), 0, 0, 1, 1},
+  {&__pyx_n_s_random, __pyx_k_random, sizeof(__pyx_k_random), 0, 0, 1, 1},
+  {&__pyx_n_s_round, __pyx_k_round, sizeof(__pyx_k_round), 0, 0, 1, 1},
   {&__pyx_n_s_run, __pyx_k_run, sizeof(__pyx_k_run), 0, 0, 1, 1},
   {&__pyx_n_s_self, __pyx_k_self, sizeof(__pyx_k_self), 0, 0, 1, 1},
   {&__pyx_n_s_sensor1, __pyx_k_sensor1, sizeof(__pyx_k_sensor1), 0, 0, 1, 1},
   {&__pyx_n_s_sensor2, __pyx_k_sensor2, sizeof(__pyx_k_sensor2), 0, 0, 1, 1},
   {&__pyx_n_s_sensor3, __pyx_k_sensor3, sizeof(__pyx_k_sensor3), 0, 0, 1, 1},
   {&__pyx_n_s_sensor4, __pyx_k_sensor4, sizeof(__pyx_k_sensor4), 0, 0, 1, 1},
+  {&__pyx_n_s_sleep, __pyx_k_sleep, sizeof(__pyx_k_sleep), 0, 0, 1, 1},
   {&__pyx_n_s_test, __pyx_k_test, sizeof(__pyx_k_test), 0, 0, 1, 1},
   {&__pyx_n_s_time, __pyx_k_time, sizeof(__pyx_k_time), 0, 0, 1, 1},
   {&__pyx_n_s_updateML, __pyx_k_updateML, sizeof(__pyx_k_updateML), 0, 0, 1, 1},
+  {&__pyx_n_s_update_model, __pyx_k_update_model, sizeof(__pyx_k_update_model), 0, 0, 1, 1},
   {0, 0, 0, 0, 0, 0, 0}
 };
 static CYTHON_SMALL_CODE int __Pyx_InitCachedBuiltins(void) {
-  __pyx_builtin_object = __Pyx_GetBuiltinName(__pyx_n_s_object); if (!__pyx_builtin_object) __PYX_ERR(0, 8, __pyx_L1_error)
+  __pyx_builtin_object = __Pyx_GetBuiltinName(__pyx_n_s_object); if (!__pyx_builtin_object) __PYX_ERR(0, 9, __pyx_L1_error)
+  __pyx_builtin_round = __Pyx_GetBuiltinName(__pyx_n_s_round); if (!__pyx_builtin_round) __PYX_ERR(0, 98, __pyx_L1_error)
   return 0;
   __pyx_L1_error:;
   return -1;
@@ -2066,135 +3653,218 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__Pyx_InitCachedConstants", 0);
 
-  /* "feedback.py":8
+  /* "feedback.py":141
+ *             time.sleep(2)
+ *             self.nutrient_absoption()
+ *             rand = random.randint(0, 1)             # <<<<<<<<<<<<<<
+ *             print("Machine Model Output: ", rand)
+ *             self.updateML(rand)
+ */
+  __pyx_tuple_ = PyTuple_Pack(2, __pyx_int_0, __pyx_int_1); if (unlikely(!__pyx_tuple_)) __PYX_ERR(0, 141, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple_);
+  __Pyx_GIVEREF(__pyx_tuple_);
+
+  /* "feedback.py":9
  *     high = 1
  * 
  * class Model1(object):             # <<<<<<<<<<<<<<
  *     def __init__(self):
  *         self.ammonium = .75
  */
-  __pyx_tuple_ = PyTuple_Pack(1, __pyx_builtin_object); if (unlikely(!__pyx_tuple_)) __PYX_ERR(0, 8, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple_);
-  __Pyx_GIVEREF(__pyx_tuple_);
+  __pyx_tuple__2 = PyTuple_Pack(1, __pyx_builtin_object); if (unlikely(!__pyx_tuple__2)) __PYX_ERR(0, 9, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__2);
+  __Pyx_GIVEREF(__pyx_tuple__2);
 
-  /* "feedback.py":9
+  /* "feedback.py":10
  * 
  * class Model1(object):
  *     def __init__(self):             # <<<<<<<<<<<<<<
  *         self.ammonium = .75
  *         self.magnesium = .5
  */
-  __pyx_tuple__2 = PyTuple_Pack(1, __pyx_n_s_self); if (unlikely(!__pyx_tuple__2)) __PYX_ERR(0, 9, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__2);
-  __Pyx_GIVEREF(__pyx_tuple__2);
-  __pyx_codeobj__3 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__2, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_feedback_py, __pyx_n_s_init, 9, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__3)) __PYX_ERR(0, 9, __pyx_L1_error)
+  __pyx_tuple__3 = PyTuple_Pack(1, __pyx_n_s_self); if (unlikely(!__pyx_tuple__3)) __PYX_ERR(0, 10, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__3);
+  __Pyx_GIVEREF(__pyx_tuple__3);
+  __pyx_codeobj__4 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__3, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_feedback_py, __pyx_n_s_init, 10, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__4)) __PYX_ERR(0, 10, __pyx_L1_error)
 
-  /* "feedback.py":15
+  /* "feedback.py":16
  *         self.phosphorus = .9
  * 
  * class Model2(object):             # <<<<<<<<<<<<<<
  *     def __init__(self):
  *         self.ammonium = 1.5
  */
-  __pyx_tuple__4 = PyTuple_Pack(1, __pyx_builtin_object); if (unlikely(!__pyx_tuple__4)) __PYX_ERR(0, 15, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__4);
-  __Pyx_GIVEREF(__pyx_tuple__4);
+  __pyx_tuple__5 = PyTuple_Pack(1, __pyx_builtin_object); if (unlikely(!__pyx_tuple__5)) __PYX_ERR(0, 16, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__5);
+  __Pyx_GIVEREF(__pyx_tuple__5);
 
-  /* "feedback.py":16
+  /* "feedback.py":17
  * 
  * class Model2(object):
  *     def __init__(self):             # <<<<<<<<<<<<<<
  *         self.ammonium = 1.5
- *         self.magnesium = 1
+ *         self.magnesium = 1.1
  */
-  __pyx_tuple__5 = PyTuple_Pack(1, __pyx_n_s_self); if (unlikely(!__pyx_tuple__5)) __PYX_ERR(0, 16, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__5);
-  __Pyx_GIVEREF(__pyx_tuple__5);
-  __pyx_codeobj__6 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__5, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_feedback_py, __pyx_n_s_init, 16, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__6)) __PYX_ERR(0, 16, __pyx_L1_error)
+  __pyx_tuple__6 = PyTuple_Pack(1, __pyx_n_s_self); if (unlikely(!__pyx_tuple__6)) __PYX_ERR(0, 17, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__6);
+  __Pyx_GIVEREF(__pyx_tuple__6);
+  __pyx_codeobj__7 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__6, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_feedback_py, __pyx_n_s_init, 17, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__7)) __PYX_ERR(0, 17, __pyx_L1_error)
 
-  /* "feedback.py":26
- *     model = Model.low
- * 
+  /* "feedback.py":28
+ *         Initial runtime sequence
+ *     '''
  *     def __init__(self):             # <<<<<<<<<<<<<<
- * 
- *         pass
+ *         print("Setting System Up...")
+ *         # class variable representing model object; holds double values for each nutrient
  */
-  __pyx_tuple__7 = PyTuple_Pack(1, __pyx_n_s_self); if (unlikely(!__pyx_tuple__7)) __PYX_ERR(0, 26, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__7);
-  __Pyx_GIVEREF(__pyx_tuple__7);
-  __pyx_codeobj__8 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_feedback_py, __pyx_n_s_init, 26, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__8)) __PYX_ERR(0, 26, __pyx_L1_error)
+  __pyx_tuple__8 = PyTuple_Pack(1, __pyx_n_s_self); if (unlikely(!__pyx_tuple__8)) __PYX_ERR(0, 28, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__8);
+  __Pyx_GIVEREF(__pyx_tuple__8);
+  __pyx_codeobj__9 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__8, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_feedback_py, __pyx_n_s_init, 28, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__9)) __PYX_ERR(0, 28, __pyx_L1_error)
 
-  /* "feedback.py":30
- *         pass
- * 
+  /* "feedback.py":51
+ *         Requires: doubles from class object
+ *     '''
+ *     def update_model(self):             # <<<<<<<<<<<<<<
+ *         self.ammonium = self.nutrient_model.ammonium
+ *         self.magnesium = self.nutrient_model.magnesium
+ */
+  __pyx_tuple__10 = PyTuple_Pack(1, __pyx_n_s_self); if (unlikely(!__pyx_tuple__10)) __PYX_ERR(0, 51, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__10);
+  __Pyx_GIVEREF(__pyx_tuple__10);
+  __pyx_codeobj__11 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__10, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_feedback_py, __pyx_n_s_update_model, 51, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__11)) __PYX_ERR(0, 51, __pyx_L1_error)
+
+  /* "feedback.py":61
+ *         Requires: input as binary 1 or 0 from sensor output
+ *     '''
  *     def updateML(self, input):             # <<<<<<<<<<<<<<
  *         ML_input = input
  *         if (ML_input == 0):
  */
-  __pyx_tuple__9 = PyTuple_Pack(3, __pyx_n_s_self, __pyx_n_s_input, __pyx_n_s_ML_input); if (unlikely(!__pyx_tuple__9)) __PYX_ERR(0, 30, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__9);
-  __Pyx_GIVEREF(__pyx_tuple__9);
-  __pyx_codeobj__10 = (PyObject*)__Pyx_PyCode_New(2, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__9, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_feedback_py, __pyx_n_s_updateML, 30, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__10)) __PYX_ERR(0, 30, __pyx_L1_error)
+  __pyx_tuple__12 = PyTuple_Pack(3, __pyx_n_s_self, __pyx_n_s_input, __pyx_n_s_ML_input); if (unlikely(!__pyx_tuple__12)) __PYX_ERR(0, 61, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__12);
+  __Pyx_GIVEREF(__pyx_tuple__12);
+  __pyx_codeobj__13 = (PyObject*)__Pyx_PyCode_New(2, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__12, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_feedback_py, __pyx_n_s_updateML, 61, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__13)) __PYX_ERR(0, 61, __pyx_L1_error)
 
-  /* "feedback.py":38
+  /* "feedback.py":78
+ *         Requires: N/A
+ *     '''
+ *     def get_ammonium(self):             # <<<<<<<<<<<<<<
+ *         return self.current_ammonium
+ * 
+ */
+  __pyx_tuple__14 = PyTuple_Pack(1, __pyx_n_s_self); if (unlikely(!__pyx_tuple__14)) __PYX_ERR(0, 78, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__14);
+  __Pyx_GIVEREF(__pyx_tuple__14);
+  __pyx_codeobj__15 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__14, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_feedback_py, __pyx_n_s_get_ammonium, 78, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__15)) __PYX_ERR(0, 78, __pyx_L1_error)
+
+  /* "feedback.py":81
+ *         return self.current_ammonium
+ * 
+ *     def get_magnesium(self):             # <<<<<<<<<<<<<<
+ *         return self.current_magnesium
+ * 
+ */
+  __pyx_tuple__16 = PyTuple_Pack(1, __pyx_n_s_self); if (unlikely(!__pyx_tuple__16)) __PYX_ERR(0, 81, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__16);
+  __Pyx_GIVEREF(__pyx_tuple__16);
+  __pyx_codeobj__17 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__16, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_feedback_py, __pyx_n_s_get_magnesium, 81, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__17)) __PYX_ERR(0, 81, __pyx_L1_error)
+
+  /* "feedback.py":84
+ *         return self.current_magnesium
+ * 
+ *     def get_calcium(self):             # <<<<<<<<<<<<<<
+ *         return 1
+ * 
+ */
+  __pyx_tuple__18 = PyTuple_Pack(1, __pyx_n_s_self); if (unlikely(!__pyx_tuple__18)) __PYX_ERR(0, 84, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__18);
+  __Pyx_GIVEREF(__pyx_tuple__18);
+  __pyx_codeobj__19 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__18, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_feedback_py, __pyx_n_s_get_calcium, 84, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__19)) __PYX_ERR(0, 84, __pyx_L1_error)
+
+  /* "feedback.py":87
+ *         return 1
+ * 
+ *     def get_phosphorus(self):             # <<<<<<<<<<<<<<
+ *         return 1
+ * 
+ */
+  __pyx_tuple__20 = PyTuple_Pack(1, __pyx_n_s_self); if (unlikely(!__pyx_tuple__20)) __PYX_ERR(0, 87, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__20);
+  __Pyx_GIVEREF(__pyx_tuple__20);
+  __pyx_codeobj__21 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__20, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_feedback_py, __pyx_n_s_get_phosphorus, 87, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__21)) __PYX_ERR(0, 87, __pyx_L1_error)
+
+  /* "feedback.py":94
+ *         Requires: Sensor output WIP
+ *     '''
+ *     def sensor1(self):             # <<<<<<<<<<<<<<
+ *         if (self.current_ammonium < self.ammonium):
+ *             #actuator1.release()
+ */
+  __pyx_tuple__22 = PyTuple_Pack(1, __pyx_n_s_self); if (unlikely(!__pyx_tuple__22)) __PYX_ERR(0, 94, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__22);
+  __Pyx_GIVEREF(__pyx_tuple__22);
+  __pyx_codeobj__23 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__22, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_feedback_py, __pyx_n_s_sensor1, 94, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__23)) __PYX_ERR(0, 94, __pyx_L1_error)
+
+  /* "feedback.py":104
  *         pass
  * 
- *     def sensor1(self):             # <<<<<<<<<<<<<<
- *         pass
- *     def sensor2(self):
- */
-  __pyx_tuple__11 = PyTuple_Pack(1, __pyx_n_s_self); if (unlikely(!__pyx_tuple__11)) __PYX_ERR(0, 38, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__11);
-  __Pyx_GIVEREF(__pyx_tuple__11);
-  __pyx_codeobj__12 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__11, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_feedback_py, __pyx_n_s_sensor1, 38, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__12)) __PYX_ERR(0, 38, __pyx_L1_error)
-
-  /* "feedback.py":40
- *     def sensor1(self):
- *         pass
  *     def sensor2(self):             # <<<<<<<<<<<<<<
- *         pass
- *     def sensor3(self):
+ *         if (self.current_magnesium < self.magnesium):
+ *             # actuator2.release()
  */
-  __pyx_tuple__13 = PyTuple_Pack(1, __pyx_n_s_self); if (unlikely(!__pyx_tuple__13)) __PYX_ERR(0, 40, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__13);
-  __Pyx_GIVEREF(__pyx_tuple__13);
-  __pyx_codeobj__14 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__13, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_feedback_py, __pyx_n_s_sensor2, 40, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__14)) __PYX_ERR(0, 40, __pyx_L1_error)
+  __pyx_tuple__24 = PyTuple_Pack(1, __pyx_n_s_self); if (unlikely(!__pyx_tuple__24)) __PYX_ERR(0, 104, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__24);
+  __Pyx_GIVEREF(__pyx_tuple__24);
+  __pyx_codeobj__25 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__24, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_feedback_py, __pyx_n_s_sensor2, 104, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__25)) __PYX_ERR(0, 104, __pyx_L1_error)
 
-  /* "feedback.py":42
- *     def sensor2(self):
+  /* "feedback.py":113
+ * 
  *         pass
  *     def sensor3(self):             # <<<<<<<<<<<<<<
- *         pass
- *     def sensor4(self):
+ *         nutrient = self.get_calcium()
+ *         if (nutrient < self.calcium):
  */
-  __pyx_tuple__15 = PyTuple_Pack(1, __pyx_n_s_self); if (unlikely(!__pyx_tuple__15)) __PYX_ERR(0, 42, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__15);
-  __Pyx_GIVEREF(__pyx_tuple__15);
-  __pyx_codeobj__16 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__15, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_feedback_py, __pyx_n_s_sensor3, 42, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__16)) __PYX_ERR(0, 42, __pyx_L1_error)
+  __pyx_tuple__26 = PyTuple_Pack(2, __pyx_n_s_self, __pyx_n_s_nutrient); if (unlikely(!__pyx_tuple__26)) __PYX_ERR(0, 113, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__26);
+  __Pyx_GIVEREF(__pyx_tuple__26);
+  __pyx_codeobj__27 = (PyObject*)__Pyx_PyCode_New(1, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__26, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_feedback_py, __pyx_n_s_sensor3, 113, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__27)) __PYX_ERR(0, 113, __pyx_L1_error)
 
-  /* "feedback.py":44
- *     def sensor3(self):
+  /* "feedback.py":119
+ *             pass
  *         pass
  *     def sensor4(self):             # <<<<<<<<<<<<<<
- *         pass
- * 
+ *         nutrient = self.get_phosphorus()
+ *         if (nutrient < self.phosphorous):
  */
-  __pyx_tuple__17 = PyTuple_Pack(1, __pyx_n_s_self); if (unlikely(!__pyx_tuple__17)) __PYX_ERR(0, 44, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__17);
-  __Pyx_GIVEREF(__pyx_tuple__17);
-  __pyx_codeobj__18 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__17, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_feedback_py, __pyx_n_s_sensor4, 44, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__18)) __PYX_ERR(0, 44, __pyx_L1_error)
+  __pyx_tuple__28 = PyTuple_Pack(2, __pyx_n_s_self, __pyx_n_s_nutrient); if (unlikely(!__pyx_tuple__28)) __PYX_ERR(0, 119, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__28);
+  __Pyx_GIVEREF(__pyx_tuple__28);
+  __pyx_codeobj__29 = (PyObject*)__Pyx_PyCode_New(1, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__28, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_feedback_py, __pyx_n_s_sensor4, 119, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__29)) __PYX_ERR(0, 119, __pyx_L1_error)
 
-  /* "feedback.py":47
+  /* "feedback.py":126
  *         pass
  * 
+ *     def nutrient_absoption(self):             # <<<<<<<<<<<<<<
+ *         self.current_ammonium -= .05
+ *         self.current_magnesium -= .05
+ */
+  __pyx_tuple__30 = PyTuple_Pack(1, __pyx_n_s_self); if (unlikely(!__pyx_tuple__30)) __PYX_ERR(0, 126, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__30);
+  __Pyx_GIVEREF(__pyx_tuple__30);
+  __pyx_codeobj__31 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__30, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_feedback_py, __pyx_n_s_nutrient_absoption, 126, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__31)) __PYX_ERR(0, 126, __pyx_L1_error)
+
+  /* "feedback.py":136
+ *         Requires: everything else to work
+ *     '''
  *     def run(self):             # <<<<<<<<<<<<<<
- * 
+ *         print("Running Loop")
  *         while(True):
  */
-  __pyx_tuple__19 = PyTuple_Pack(1, __pyx_n_s_self); if (unlikely(!__pyx_tuple__19)) __PYX_ERR(0, 47, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__19);
-  __Pyx_GIVEREF(__pyx_tuple__19);
-  __pyx_codeobj__20 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__19, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_feedback_py, __pyx_n_s_run, 47, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__20)) __PYX_ERR(0, 47, __pyx_L1_error)
+  __pyx_tuple__32 = PyTuple_Pack(2, __pyx_n_s_self, __pyx_n_s_rand); if (unlikely(!__pyx_tuple__32)) __PYX_ERR(0, 136, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__32);
+  __Pyx_GIVEREF(__pyx_tuple__32);
+  __pyx_codeobj__33 = (PyObject*)__Pyx_PyCode_New(1, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__32, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_feedback_py, __pyx_n_s_run, 136, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__33)) __PYX_ERR(0, 136, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -2206,11 +3876,14 @@ static CYTHON_SMALL_CODE int __Pyx_InitGlobals(void) {
   if (__Pyx_InitStrings(__pyx_string_tab) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
   __pyx_float__5 = PyFloat_FromDouble(.5); if (unlikely(!__pyx_float__5)) __PYX_ERR(0, 1, __pyx_L1_error)
   __pyx_float__9 = PyFloat_FromDouble(.9); if (unlikely(!__pyx_float__9)) __PYX_ERR(0, 1, __pyx_L1_error)
+  __pyx_float__05 = PyFloat_FromDouble(.05); if (unlikely(!__pyx_float__05)) __PYX_ERR(0, 1, __pyx_L1_error)
   __pyx_float__75 = PyFloat_FromDouble(.75); if (unlikely(!__pyx_float__75)) __PYX_ERR(0, 1, __pyx_L1_error)
+  __pyx_float_1_1 = PyFloat_FromDouble(1.1); if (unlikely(!__pyx_float_1_1)) __PYX_ERR(0, 1, __pyx_L1_error)
   __pyx_float_1_5 = PyFloat_FromDouble(1.5); if (unlikely(!__pyx_float_1_5)) __PYX_ERR(0, 1, __pyx_L1_error)
   __pyx_float_1_8 = PyFloat_FromDouble(1.8); if (unlikely(!__pyx_float_1_8)) __PYX_ERR(0, 1, __pyx_L1_error)
   __pyx_int_0 = PyInt_FromLong(0); if (unlikely(!__pyx_int_0)) __PYX_ERR(0, 1, __pyx_L1_error)
   __pyx_int_1 = PyInt_FromLong(1); if (unlikely(!__pyx_int_1)) __PYX_ERR(0, 1, __pyx_L1_error)
+  __pyx_int_2 = PyInt_FromLong(2); if (unlikely(!__pyx_int_2)) __PYX_ERR(0, 1, __pyx_L1_error)
   return 0;
   __pyx_L1_error:;
   return -1;
@@ -2457,7 +4130,7 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_init_sys_getdefaultencoding_params() < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   #endif
   if (__pyx_module_is_main_feedback) {
-    if (PyObject_SetAttr(__pyx_m, __pyx_n_s_name, __pyx_n_s_main) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
+    if (PyObject_SetAttr(__pyx_m, __pyx_n_s_name_2, __pyx_n_s_main) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   }
   #if PY_MAJOR_VERSION >= 3
   {
@@ -2486,8 +4159,8 @@ if (!__Pyx_RefNanny) {
 
   /* "feedback.py":1
  * import time             # <<<<<<<<<<<<<<
+ * import random
  * from enum import Enum
- * 
  */
   __pyx_t_1 = __Pyx_Import(__pyx_n_s_time, 0, -1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -2496,345 +4169,453 @@ if (!__Pyx_RefNanny) {
 
   /* "feedback.py":2
  * import time
+ * import random             # <<<<<<<<<<<<<<
+ * from enum import Enum
+ * 
+ */
+  __pyx_t_1 = __Pyx_Import(__pyx_n_s_random, 0, -1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_random, __pyx_t_1) < 0) __PYX_ERR(0, 2, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+  /* "feedback.py":3
+ * import time
+ * import random
  * from enum import Enum             # <<<<<<<<<<<<<<
  * 
  * class Model(Enum):
  */
-  __pyx_t_1 = PyList_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2, __pyx_L1_error)
+  __pyx_t_1 = PyList_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 3, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_INCREF(__pyx_n_s_Enum);
   __Pyx_GIVEREF(__pyx_n_s_Enum);
   PyList_SET_ITEM(__pyx_t_1, 0, __pyx_n_s_Enum);
-  __pyx_t_2 = __Pyx_Import(__pyx_n_s_enum, __pyx_t_1, -1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_Import(__pyx_n_s_enum, __pyx_t_1, -1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 3, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_ImportFrom(__pyx_t_2, __pyx_n_s_Enum); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_ImportFrom(__pyx_t_2, __pyx_n_s_Enum); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 3, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_Enum, __pyx_t_1) < 0) __PYX_ERR(0, 2, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_Enum, __pyx_t_1) < 0) __PYX_ERR(0, 3, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "feedback.py":4
+  /* "feedback.py":5
  * from enum import Enum
  * 
  * class Model(Enum):             # <<<<<<<<<<<<<<
  *     low = 0
  *     high = 1
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_Enum); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 4, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_Enum); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 5, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_1 = PyTuple_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 4, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 5, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_2);
   PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_t_2);
   __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_CalculateMetaclass(NULL, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 4, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CalculateMetaclass(NULL, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 5, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_Py3MetaclassPrepare(__pyx_t_2, __pyx_t_1, __pyx_n_s_Model, __pyx_n_s_Model, (PyObject *) NULL, __pyx_n_s_feedback, (PyObject *) NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 4, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_Py3MetaclassPrepare(__pyx_t_2, __pyx_t_1, __pyx_n_s_Model, __pyx_n_s_Model, (PyObject *) NULL, __pyx_n_s_feedback, (PyObject *) NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 5, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
 
-  /* "feedback.py":5
+  /* "feedback.py":6
  * 
  * class Model(Enum):
  *     low = 0             # <<<<<<<<<<<<<<
  *     high = 1
  * 
  */
-  if (__Pyx_SetNameInClass(__pyx_t_3, __pyx_n_s_low, __pyx_int_0) < 0) __PYX_ERR(0, 5, __pyx_L1_error)
+  if (__Pyx_SetNameInClass(__pyx_t_3, __pyx_n_s_low, __pyx_int_0) < 0) __PYX_ERR(0, 6, __pyx_L1_error)
 
-  /* "feedback.py":6
+  /* "feedback.py":7
  * class Model(Enum):
  *     low = 0
  *     high = 1             # <<<<<<<<<<<<<<
  * 
  * class Model1(object):
  */
-  if (__Pyx_SetNameInClass(__pyx_t_3, __pyx_n_s_high, __pyx_int_1) < 0) __PYX_ERR(0, 6, __pyx_L1_error)
+  if (__Pyx_SetNameInClass(__pyx_t_3, __pyx_n_s_high, __pyx_int_1) < 0) __PYX_ERR(0, 7, __pyx_L1_error)
 
-  /* "feedback.py":4
+  /* "feedback.py":5
  * from enum import Enum
  * 
  * class Model(Enum):             # <<<<<<<<<<<<<<
  *     low = 0
  *     high = 1
  */
-  __pyx_t_4 = __Pyx_Py3ClassCreate(__pyx_t_2, __pyx_n_s_Model, __pyx_t_1, __pyx_t_3, NULL, 0, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 4, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_Py3ClassCreate(__pyx_t_2, __pyx_n_s_Model, __pyx_t_1, __pyx_t_3, NULL, 0, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 5, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_Model, __pyx_t_4) < 0) __PYX_ERR(0, 4, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_Model, __pyx_t_4) < 0) __PYX_ERR(0, 5, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "feedback.py":8
+  /* "feedback.py":9
  *     high = 1
  * 
  * class Model1(object):             # <<<<<<<<<<<<<<
  *     def __init__(self):
  *         self.ammonium = .75
  */
-  __pyx_t_1 = __Pyx_CalculateMetaclass(NULL, __pyx_tuple_); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 8, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_CalculateMetaclass(NULL, __pyx_tuple__2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 9, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_Py3MetaclassPrepare(__pyx_t_1, __pyx_tuple_, __pyx_n_s_Model1, __pyx_n_s_Model1, (PyObject *) NULL, __pyx_n_s_feedback, (PyObject *) NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 8, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_Py3MetaclassPrepare(__pyx_t_1, __pyx_tuple__2, __pyx_n_s_Model1, __pyx_n_s_Model1, (PyObject *) NULL, __pyx_n_s_feedback, (PyObject *) NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 9, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
 
-  /* "feedback.py":9
+  /* "feedback.py":10
  * 
  * class Model1(object):
  *     def __init__(self):             # <<<<<<<<<<<<<<
  *         self.ammonium = .75
  *         self.magnesium = .5
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_8feedback_6Model1_1__init__, 0, __pyx_n_s_Model1___init, NULL, __pyx_n_s_feedback, __pyx_d, ((PyObject *)__pyx_codeobj__3)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 9, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_8feedback_6Model1_1__init__, 0, __pyx_n_s_Model1___init, NULL, __pyx_n_s_feedback, __pyx_d, ((PyObject *)__pyx_codeobj__4)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 10, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (__Pyx_SetNameInClass(__pyx_t_2, __pyx_n_s_init, __pyx_t_3) < 0) __PYX_ERR(0, 9, __pyx_L1_error)
+  if (__Pyx_SetNameInClass(__pyx_t_2, __pyx_n_s_init, __pyx_t_3) < 0) __PYX_ERR(0, 10, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-  /* "feedback.py":8
+  /* "feedback.py":9
  *     high = 1
  * 
  * class Model1(object):             # <<<<<<<<<<<<<<
  *     def __init__(self):
  *         self.ammonium = .75
  */
-  __pyx_t_3 = __Pyx_Py3ClassCreate(__pyx_t_1, __pyx_n_s_Model1, __pyx_tuple_, __pyx_t_2, NULL, 0, 1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 8, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_Py3ClassCreate(__pyx_t_1, __pyx_n_s_Model1, __pyx_tuple__2, __pyx_t_2, NULL, 0, 1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 9, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_Model1, __pyx_t_3) < 0) __PYX_ERR(0, 8, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_Model1, __pyx_t_3) < 0) __PYX_ERR(0, 9, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "feedback.py":15
+  /* "feedback.py":16
  *         self.phosphorus = .9
  * 
  * class Model2(object):             # <<<<<<<<<<<<<<
  *     def __init__(self):
  *         self.ammonium = 1.5
  */
-  __pyx_t_1 = __Pyx_CalculateMetaclass(NULL, __pyx_tuple__4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 15, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_CalculateMetaclass(NULL, __pyx_tuple__5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 16, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_Py3MetaclassPrepare(__pyx_t_1, __pyx_tuple__4, __pyx_n_s_Model2, __pyx_n_s_Model2, (PyObject *) NULL, __pyx_n_s_feedback, (PyObject *) NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 15, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_Py3MetaclassPrepare(__pyx_t_1, __pyx_tuple__5, __pyx_n_s_Model2, __pyx_n_s_Model2, (PyObject *) NULL, __pyx_n_s_feedback, (PyObject *) NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 16, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
 
-  /* "feedback.py":16
+  /* "feedback.py":17
  * 
  * class Model2(object):
  *     def __init__(self):             # <<<<<<<<<<<<<<
  *         self.ammonium = 1.5
- *         self.magnesium = 1
+ *         self.magnesium = 1.1
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_8feedback_6Model2_1__init__, 0, __pyx_n_s_Model2___init, NULL, __pyx_n_s_feedback, __pyx_d, ((PyObject *)__pyx_codeobj__6)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 16, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_8feedback_6Model2_1__init__, 0, __pyx_n_s_Model2___init, NULL, __pyx_n_s_feedback, __pyx_d, ((PyObject *)__pyx_codeobj__7)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 17, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (__Pyx_SetNameInClass(__pyx_t_2, __pyx_n_s_init, __pyx_t_3) < 0) __PYX_ERR(0, 16, __pyx_L1_error)
+  if (__Pyx_SetNameInClass(__pyx_t_2, __pyx_n_s_init, __pyx_t_3) < 0) __PYX_ERR(0, 17, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-  /* "feedback.py":15
+  /* "feedback.py":16
  *         self.phosphorus = .9
  * 
  * class Model2(object):             # <<<<<<<<<<<<<<
  *     def __init__(self):
  *         self.ammonium = 1.5
  */
-  __pyx_t_3 = __Pyx_Py3ClassCreate(__pyx_t_1, __pyx_n_s_Model2, __pyx_tuple__4, __pyx_t_2, NULL, 0, 1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 15, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_Py3ClassCreate(__pyx_t_1, __pyx_n_s_Model2, __pyx_tuple__5, __pyx_t_2, NULL, 0, 1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 16, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_Model2, __pyx_t_3) < 0) __PYX_ERR(0, 15, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_Model2, __pyx_t_3) < 0) __PYX_ERR(0, 16, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "feedback.py":22
+  /* "feedback.py":23
  *         self.phosphorus = 1.8
  * 
  * class Feedback():             # <<<<<<<<<<<<<<
  * 
- *     model = Model.low
+ *     '''
  */
-  __pyx_t_1 = __Pyx_Py3MetaclassPrepare((PyObject *) NULL, __pyx_empty_tuple, __pyx_n_s_Feedback, __pyx_n_s_Feedback, (PyObject *) NULL, __pyx_n_s_feedback, (PyObject *) NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 22, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_Py3MetaclassPrepare((PyObject *) NULL, __pyx_empty_tuple, __pyx_n_s_Feedback, __pyx_n_s_Feedback, (PyObject *) NULL, __pyx_n_s_feedback, __pyx_kp_s_Initial_runtime_sequence); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 23, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
 
-  /* "feedback.py":24
- * class Feedback():
- * 
- *     model = Model.low             # <<<<<<<<<<<<<<
- * 
- *     def __init__(self):
- */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_Model); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 24, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_low); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 24, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (__Pyx_SetNameInClass(__pyx_t_1, __pyx_n_s_model, __pyx_t_3) < 0) __PYX_ERR(0, 24, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-
-  /* "feedback.py":26
- *     model = Model.low
- * 
+  /* "feedback.py":28
+ *         Initial runtime sequence
+ *     '''
  *     def __init__(self):             # <<<<<<<<<<<<<<
- * 
- *         pass
+ *         print("Setting System Up...")
+ *         # class variable representing model object; holds double values for each nutrient
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_8feedback_8Feedback_1__init__, 0, __pyx_n_s_Feedback___init, NULL, __pyx_n_s_feedback, __pyx_d, ((PyObject *)__pyx_codeobj__8)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 26, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  if (__Pyx_SetNameInClass(__pyx_t_1, __pyx_n_s_init, __pyx_t_3) < 0) __PYX_ERR(0, 26, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_8feedback_8Feedback_1__init__, 0, __pyx_n_s_Feedback___init, NULL, __pyx_n_s_feedback, __pyx_d, ((PyObject *)__pyx_codeobj__9)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 28, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (__Pyx_SetNameInClass(__pyx_t_1, __pyx_n_s_init, __pyx_t_2) < 0) __PYX_ERR(0, 28, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "feedback.py":30
- *         pass
- * 
+  /* "feedback.py":51
+ *         Requires: doubles from class object
+ *     '''
+ *     def update_model(self):             # <<<<<<<<<<<<<<
+ *         self.ammonium = self.nutrient_model.ammonium
+ *         self.magnesium = self.nutrient_model.magnesium
+ */
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_8feedback_8Feedback_3update_model, 0, __pyx_n_s_Feedback_update_model, NULL, __pyx_n_s_feedback, __pyx_d, ((PyObject *)__pyx_codeobj__11)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 51, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (__Pyx_SetNameInClass(__pyx_t_1, __pyx_n_s_update_model, __pyx_t_2) < 0) __PYX_ERR(0, 51, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "feedback.py":61
+ *         Requires: input as binary 1 or 0 from sensor output
+ *     '''
  *     def updateML(self, input):             # <<<<<<<<<<<<<<
  *         ML_input = input
  *         if (ML_input == 0):
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_8feedback_8Feedback_3updateML, 0, __pyx_n_s_Feedback_updateML, NULL, __pyx_n_s_feedback, __pyx_d, ((PyObject *)__pyx_codeobj__10)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 30, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  if (__Pyx_SetNameInClass(__pyx_t_1, __pyx_n_s_updateML, __pyx_t_3) < 0) __PYX_ERR(0, 30, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_8feedback_8Feedback_5updateML, 0, __pyx_n_s_Feedback_updateML, NULL, __pyx_n_s_feedback, __pyx_d, ((PyObject *)__pyx_codeobj__13)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 61, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (__Pyx_SetNameInClass(__pyx_t_1, __pyx_n_s_updateML, __pyx_t_2) < 0) __PYX_ERR(0, 61, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "feedback.py":38
+  /* "feedback.py":78
+ *         Requires: N/A
+ *     '''
+ *     def get_ammonium(self):             # <<<<<<<<<<<<<<
+ *         return self.current_ammonium
+ * 
+ */
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_8feedback_8Feedback_7get_ammonium, 0, __pyx_n_s_Feedback_get_ammonium, NULL, __pyx_n_s_feedback, __pyx_d, ((PyObject *)__pyx_codeobj__15)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 78, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (__Pyx_SetNameInClass(__pyx_t_1, __pyx_n_s_get_ammonium, __pyx_t_2) < 0) __PYX_ERR(0, 78, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "feedback.py":81
+ *         return self.current_ammonium
+ * 
+ *     def get_magnesium(self):             # <<<<<<<<<<<<<<
+ *         return self.current_magnesium
+ * 
+ */
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_8feedback_8Feedback_9get_magnesium, 0, __pyx_n_s_Feedback_get_magnesium, NULL, __pyx_n_s_feedback, __pyx_d, ((PyObject *)__pyx_codeobj__17)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 81, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (__Pyx_SetNameInClass(__pyx_t_1, __pyx_n_s_get_magnesium, __pyx_t_2) < 0) __PYX_ERR(0, 81, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "feedback.py":84
+ *         return self.current_magnesium
+ * 
+ *     def get_calcium(self):             # <<<<<<<<<<<<<<
+ *         return 1
+ * 
+ */
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_8feedback_8Feedback_11get_calcium, 0, __pyx_n_s_Feedback_get_calcium, NULL, __pyx_n_s_feedback, __pyx_d, ((PyObject *)__pyx_codeobj__19)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 84, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (__Pyx_SetNameInClass(__pyx_t_1, __pyx_n_s_get_calcium, __pyx_t_2) < 0) __PYX_ERR(0, 84, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "feedback.py":87
+ *         return 1
+ * 
+ *     def get_phosphorus(self):             # <<<<<<<<<<<<<<
+ *         return 1
+ * 
+ */
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_8feedback_8Feedback_13get_phosphorus, 0, __pyx_n_s_Feedback_get_phosphorus, NULL, __pyx_n_s_feedback, __pyx_d, ((PyObject *)__pyx_codeobj__21)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 87, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (__Pyx_SetNameInClass(__pyx_t_1, __pyx_n_s_get_phosphorus, __pyx_t_2) < 0) __PYX_ERR(0, 87, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "feedback.py":94
+ *         Requires: Sensor output WIP
+ *     '''
+ *     def sensor1(self):             # <<<<<<<<<<<<<<
+ *         if (self.current_ammonium < self.ammonium):
+ *             #actuator1.release()
+ */
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_8feedback_8Feedback_15sensor1, 0, __pyx_n_s_Feedback_sensor1, NULL, __pyx_n_s_feedback, __pyx_d, ((PyObject *)__pyx_codeobj__23)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 94, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (__Pyx_SetNameInClass(__pyx_t_1, __pyx_n_s_sensor1, __pyx_t_2) < 0) __PYX_ERR(0, 94, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "feedback.py":104
  *         pass
  * 
- *     def sensor1(self):             # <<<<<<<<<<<<<<
- *         pass
- *     def sensor2(self):
- */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_8feedback_8Feedback_5sensor1, 0, __pyx_n_s_Feedback_sensor1, NULL, __pyx_n_s_feedback, __pyx_d, ((PyObject *)__pyx_codeobj__12)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 38, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  if (__Pyx_SetNameInClass(__pyx_t_1, __pyx_n_s_sensor1, __pyx_t_3) < 0) __PYX_ERR(0, 38, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-
-  /* "feedback.py":40
- *     def sensor1(self):
- *         pass
  *     def sensor2(self):             # <<<<<<<<<<<<<<
- *         pass
- *     def sensor3(self):
+ *         if (self.current_magnesium < self.magnesium):
+ *             # actuator2.release()
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_8feedback_8Feedback_7sensor2, 0, __pyx_n_s_Feedback_sensor2, NULL, __pyx_n_s_feedback, __pyx_d, ((PyObject *)__pyx_codeobj__14)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 40, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  if (__Pyx_SetNameInClass(__pyx_t_1, __pyx_n_s_sensor2, __pyx_t_3) < 0) __PYX_ERR(0, 40, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_8feedback_8Feedback_17sensor2, 0, __pyx_n_s_Feedback_sensor2, NULL, __pyx_n_s_feedback, __pyx_d, ((PyObject *)__pyx_codeobj__25)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 104, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (__Pyx_SetNameInClass(__pyx_t_1, __pyx_n_s_sensor2, __pyx_t_2) < 0) __PYX_ERR(0, 104, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "feedback.py":42
- *     def sensor2(self):
+  /* "feedback.py":113
+ * 
  *         pass
  *     def sensor3(self):             # <<<<<<<<<<<<<<
- *         pass
- *     def sensor4(self):
+ *         nutrient = self.get_calcium()
+ *         if (nutrient < self.calcium):
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_8feedback_8Feedback_9sensor3, 0, __pyx_n_s_Feedback_sensor3, NULL, __pyx_n_s_feedback, __pyx_d, ((PyObject *)__pyx_codeobj__16)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 42, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  if (__Pyx_SetNameInClass(__pyx_t_1, __pyx_n_s_sensor3, __pyx_t_3) < 0) __PYX_ERR(0, 42, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_8feedback_8Feedback_19sensor3, 0, __pyx_n_s_Feedback_sensor3, NULL, __pyx_n_s_feedback, __pyx_d, ((PyObject *)__pyx_codeobj__27)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 113, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (__Pyx_SetNameInClass(__pyx_t_1, __pyx_n_s_sensor3, __pyx_t_2) < 0) __PYX_ERR(0, 113, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "feedback.py":44
- *     def sensor3(self):
+  /* "feedback.py":119
+ *             pass
  *         pass
  *     def sensor4(self):             # <<<<<<<<<<<<<<
- *         pass
- * 
+ *         nutrient = self.get_phosphorus()
+ *         if (nutrient < self.phosphorous):
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_8feedback_8Feedback_11sensor4, 0, __pyx_n_s_Feedback_sensor4, NULL, __pyx_n_s_feedback, __pyx_d, ((PyObject *)__pyx_codeobj__18)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 44, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  if (__Pyx_SetNameInClass(__pyx_t_1, __pyx_n_s_sensor4, __pyx_t_3) < 0) __PYX_ERR(0, 44, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_8feedback_8Feedback_21sensor4, 0, __pyx_n_s_Feedback_sensor4, NULL, __pyx_n_s_feedback, __pyx_d, ((PyObject *)__pyx_codeobj__29)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 119, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (__Pyx_SetNameInClass(__pyx_t_1, __pyx_n_s_sensor4, __pyx_t_2) < 0) __PYX_ERR(0, 119, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "feedback.py":47
+  /* "feedback.py":126
  *         pass
  * 
+ *     def nutrient_absoption(self):             # <<<<<<<<<<<<<<
+ *         self.current_ammonium -= .05
+ *         self.current_magnesium -= .05
+ */
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_8feedback_8Feedback_23nutrient_absoption, 0, __pyx_n_s_Feedback_nutrient_absoption, NULL, __pyx_n_s_feedback, __pyx_d, ((PyObject *)__pyx_codeobj__31)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 126, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (__Pyx_SetNameInClass(__pyx_t_1, __pyx_n_s_nutrient_absoption, __pyx_t_2) < 0) __PYX_ERR(0, 126, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "feedback.py":136
+ *         Requires: everything else to work
+ *     '''
  *     def run(self):             # <<<<<<<<<<<<<<
- * 
+ *         print("Running Loop")
  *         while(True):
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_8feedback_8Feedback_13run, 0, __pyx_n_s_Feedback_run, NULL, __pyx_n_s_feedback, __pyx_d, ((PyObject *)__pyx_codeobj__20)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 47, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  if (__Pyx_SetNameInClass(__pyx_t_1, __pyx_n_s_run, __pyx_t_3) < 0) __PYX_ERR(0, 47, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_8feedback_8Feedback_25run, 0, __pyx_n_s_Feedback_run, NULL, __pyx_n_s_feedback, __pyx_d, ((PyObject *)__pyx_codeobj__33)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 136, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (__Pyx_SetNameInClass(__pyx_t_1, __pyx_n_s_run, __pyx_t_2) < 0) __PYX_ERR(0, 136, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "feedback.py":22
+  /* "feedback.py":23
  *         self.phosphorus = 1.8
  * 
  * class Feedback():             # <<<<<<<<<<<<<<
  * 
- *     model = Model.low
+ *     '''
  */
-  __pyx_t_3 = __Pyx_Py3ClassCreate(((PyObject*)&__Pyx_DefaultClassType), __pyx_n_s_Feedback, __pyx_empty_tuple, __pyx_t_1, NULL, 0, 1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 22, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_Feedback, __pyx_t_3) < 0) __PYX_ERR(0, 22, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_2 = __Pyx_Py3ClassCreate(((PyObject*)&__Pyx_DefaultClassType), __pyx_n_s_Feedback, __pyx_empty_tuple, __pyx_t_1, NULL, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 23, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_Feedback, __pyx_t_2) < 0) __PYX_ERR(0, 23, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "feedback.py":60
+  /* "feedback.py":151
  * 
  * 
  * if __name__ == "__main__":             # <<<<<<<<<<<<<<
- *     feedback = Feedback()
- *     feedback.run()
+ *     Model1 = Model1()
+ *     Model2 = Model2()
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_name); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 60, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_name_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 151, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_5 = (__Pyx_PyString_Equals(__pyx_t_1, __pyx_n_s_main, Py_EQ)); if (unlikely(__pyx_t_5 < 0)) __PYX_ERR(0, 60, __pyx_L1_error)
+  __pyx_t_5 = (__Pyx_PyString_Equals(__pyx_t_1, __pyx_n_s_main, Py_EQ)); if (unlikely(__pyx_t_5 < 0)) __PYX_ERR(0, 151, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (__pyx_t_5) {
 
-    /* "feedback.py":61
+    /* "feedback.py":152
  * 
  * if __name__ == "__main__":
+ *     Model1 = Model1()             # <<<<<<<<<<<<<<
+ *     Model2 = Model2()
+ *     feedback = Feedback()
+ */
+    __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_Model1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 152, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __pyx_t_2 = __Pyx_PyObject_CallNoArg(__pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 152, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    if (PyDict_SetItem(__pyx_d, __pyx_n_s_Model1, __pyx_t_2) < 0) __PYX_ERR(0, 152, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+    /* "feedback.py":153
+ * if __name__ == "__main__":
+ *     Model1 = Model1()
+ *     Model2 = Model2()             # <<<<<<<<<<<<<<
+ *     feedback = Feedback()
+ *     feedback.run()
+ */
+    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_Model2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 153, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __pyx_t_1 = __Pyx_PyObject_CallNoArg(__pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 153, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    if (PyDict_SetItem(__pyx_d, __pyx_n_s_Model2, __pyx_t_1) < 0) __PYX_ERR(0, 153, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+    /* "feedback.py":154
+ *     Model1 = Model1()
+ *     Model2 = Model2()
  *     feedback = Feedback()             # <<<<<<<<<<<<<<
  *     feedback.run()
  *     print("Feedback Loop Completed")
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_Feedback); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 61, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_Feedback); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 154, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_3 = __Pyx_PyObject_CallNoArg(__pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 61, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_2 = __Pyx_PyObject_CallNoArg(__pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 154, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    if (PyDict_SetItem(__pyx_d, __pyx_n_s_feedback, __pyx_t_3) < 0) __PYX_ERR(0, 61, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    if (PyDict_SetItem(__pyx_d, __pyx_n_s_feedback, __pyx_t_2) < 0) __PYX_ERR(0, 154, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-    /* "feedback.py":62
- * if __name__ == "__main__":
+    /* "feedback.py":155
+ *     Model2 = Model2()
  *     feedback = Feedback()
  *     feedback.run()             # <<<<<<<<<<<<<<
  *     print("Feedback Loop Completed")
- * 
+ *     print("Thank you for using our nutrient delivery system.")
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_feedback); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 62, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_run); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 62, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_feedback); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 155, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_run); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 155, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __pyx_t_3 = __Pyx_PyObject_CallNoArg(__pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 62, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __pyx_t_2 = __Pyx_PyObject_CallNoArg(__pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 155, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-    /* "feedback.py":63
+    /* "feedback.py":156
  *     feedback = Feedback()
  *     feedback.run()
  *     print("Feedback Loop Completed")             # <<<<<<<<<<<<<<
+ *     print("Thank you for using our nutrient delivery system.")
  * 
  */
-    if (__Pyx_PrintOne(0, __pyx_kp_s_Feedback_Loop_Completed) < 0) __PYX_ERR(0, 63, __pyx_L1_error)
+    if (__Pyx_PrintOne(0, __pyx_kp_s_Feedback_Loop_Completed) < 0) __PYX_ERR(0, 156, __pyx_L1_error)
 
-    /* "feedback.py":60
+    /* "feedback.py":157
+ *     feedback.run()
+ *     print("Feedback Loop Completed")
+ *     print("Thank you for using our nutrient delivery system.")             # <<<<<<<<<<<<<<
+ * 
+ */
+    if (__Pyx_PrintOne(0, __pyx_kp_s_Thank_you_for_using_our_nutrient) < 0) __PYX_ERR(0, 157, __pyx_L1_error)
+
+    /* "feedback.py":151
  * 
  * 
  * if __name__ == "__main__":             # <<<<<<<<<<<<<<
- *     feedback = Feedback()
- *     feedback.run()
+ *     Model1 = Model1()
+ *     Model2 = Model2()
  */
   }
 
   /* "feedback.py":1
  * import time             # <<<<<<<<<<<<<<
+ * import random
  * from enum import Enum
- * 
  */
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_test, __pyx_t_3) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_test, __pyx_t_2) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /*--- Wrapped vars code ---*/
 
@@ -2920,6 +4701,311 @@ static CYTHON_INLINE int __Pyx_PyObject_SetAttrStr(PyObject* obj, PyObject* attr
         return tp->tp_setattr(obj, PyString_AS_STRING(attr_name), value);
 #endif
     return PyObject_SetAttr(obj, attr_name, value);
+}
+#endif
+
+/* PyDictVersioning */
+#if CYTHON_USE_DICT_VERSIONS && CYTHON_USE_TYPE_SLOTS
+static CYTHON_INLINE PY_UINT64_T __Pyx_get_tp_dict_version(PyObject *obj) {
+    PyObject *dict = Py_TYPE(obj)->tp_dict;
+    return likely(dict) ? __PYX_GET_DICT_VERSION(dict) : 0;
+}
+static CYTHON_INLINE PY_UINT64_T __Pyx_get_object_dict_version(PyObject *obj) {
+    PyObject **dictptr = NULL;
+    Py_ssize_t offset = Py_TYPE(obj)->tp_dictoffset;
+    if (offset) {
+#if CYTHON_COMPILING_IN_CPYTHON
+        dictptr = (likely(offset > 0)) ? (PyObject **) ((char *)obj + offset) : _PyObject_GetDictPtr(obj);
+#else
+        dictptr = _PyObject_GetDictPtr(obj);
+#endif
+    }
+    return (dictptr && *dictptr) ? __PYX_GET_DICT_VERSION(*dictptr) : 0;
+}
+static CYTHON_INLINE int __Pyx_object_dict_version_matches(PyObject* obj, PY_UINT64_T tp_dict_version, PY_UINT64_T obj_dict_version) {
+    PyObject *dict = Py_TYPE(obj)->tp_dict;
+    if (unlikely(!dict) || unlikely(tp_dict_version != __PYX_GET_DICT_VERSION(dict)))
+        return 0;
+    return obj_dict_version == __Pyx_get_object_dict_version(obj);
+}
+#endif
+
+/* GetModuleGlobalName */
+#if CYTHON_USE_DICT_VERSIONS
+static PyObject *__Pyx__GetModuleGlobalName(PyObject *name, PY_UINT64_T *dict_version, PyObject **dict_cached_value)
+#else
+static CYTHON_INLINE PyObject *__Pyx__GetModuleGlobalName(PyObject *name)
+#endif
+{
+    PyObject *result;
+#if !CYTHON_AVOID_BORROWED_REFS
+#if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030500A1
+    result = _PyDict_GetItem_KnownHash(__pyx_d, name, ((PyASCIIObject *) name)->hash);
+    __PYX_UPDATE_DICT_CACHE(__pyx_d, result, *dict_cached_value, *dict_version)
+    if (likely(result)) {
+        return __Pyx_NewRef(result);
+    } else if (unlikely(PyErr_Occurred())) {
+        return NULL;
+    }
+#else
+    result = PyDict_GetItem(__pyx_d, name);
+    __PYX_UPDATE_DICT_CACHE(__pyx_d, result, *dict_cached_value, *dict_version)
+    if (likely(result)) {
+        return __Pyx_NewRef(result);
+    }
+#endif
+#else
+    result = PyObject_GetItem(__pyx_d, name);
+    __PYX_UPDATE_DICT_CACHE(__pyx_d, result, *dict_cached_value, *dict_version)
+    if (likely(result)) {
+        return __Pyx_NewRef(result);
+    }
+    PyErr_Clear();
+#endif
+    return __Pyx_GetBuiltinName(name);
+}
+
+/* PyFunctionFastCall */
+#if CYTHON_FAST_PYCALL
+static PyObject* __Pyx_PyFunction_FastCallNoKw(PyCodeObject *co, PyObject **args, Py_ssize_t na,
+                                               PyObject *globals) {
+    PyFrameObject *f;
+    PyThreadState *tstate = __Pyx_PyThreadState_Current;
+    PyObject **fastlocals;
+    Py_ssize_t i;
+    PyObject *result;
+    assert(globals != NULL);
+    /* XXX Perhaps we should create a specialized
+       PyFrame_New() that doesn't take locals, but does
+       take builtins without sanity checking them.
+       */
+    assert(tstate != NULL);
+    f = PyFrame_New(tstate, co, globals, NULL);
+    if (f == NULL) {
+        return NULL;
+    }
+    fastlocals = __Pyx_PyFrame_GetLocalsplus(f);
+    for (i = 0; i < na; i++) {
+        Py_INCREF(*args);
+        fastlocals[i] = *args++;
+    }
+    result = PyEval_EvalFrameEx(f,0);
+    ++tstate->recursion_depth;
+    Py_DECREF(f);
+    --tstate->recursion_depth;
+    return result;
+}
+#if 1 || PY_VERSION_HEX < 0x030600B1
+static PyObject *__Pyx_PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs, PyObject *kwargs) {
+    PyCodeObject *co = (PyCodeObject *)PyFunction_GET_CODE(func);
+    PyObject *globals = PyFunction_GET_GLOBALS(func);
+    PyObject *argdefs = PyFunction_GET_DEFAULTS(func);
+    PyObject *closure;
+#if PY_MAJOR_VERSION >= 3
+    PyObject *kwdefs;
+#endif
+    PyObject *kwtuple, **k;
+    PyObject **d;
+    Py_ssize_t nd;
+    Py_ssize_t nk;
+    PyObject *result;
+    assert(kwargs == NULL || PyDict_Check(kwargs));
+    nk = kwargs ? PyDict_Size(kwargs) : 0;
+    if (Py_EnterRecursiveCall((char*)" while calling a Python object")) {
+        return NULL;
+    }
+    if (
+#if PY_MAJOR_VERSION >= 3
+            co->co_kwonlyargcount == 0 &&
+#endif
+            likely(kwargs == NULL || nk == 0) &&
+            co->co_flags == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE)) {
+        if (argdefs == NULL && co->co_argcount == nargs) {
+            result = __Pyx_PyFunction_FastCallNoKw(co, args, nargs, globals);
+            goto done;
+        }
+        else if (nargs == 0 && argdefs != NULL
+                 && co->co_argcount == Py_SIZE(argdefs)) {
+            /* function called with no arguments, but all parameters have
+               a default value: use default values as arguments .*/
+            args = &PyTuple_GET_ITEM(argdefs, 0);
+            result =__Pyx_PyFunction_FastCallNoKw(co, args, Py_SIZE(argdefs), globals);
+            goto done;
+        }
+    }
+    if (kwargs != NULL) {
+        Py_ssize_t pos, i;
+        kwtuple = PyTuple_New(2 * nk);
+        if (kwtuple == NULL) {
+            result = NULL;
+            goto done;
+        }
+        k = &PyTuple_GET_ITEM(kwtuple, 0);
+        pos = i = 0;
+        while (PyDict_Next(kwargs, &pos, &k[i], &k[i+1])) {
+            Py_INCREF(k[i]);
+            Py_INCREF(k[i+1]);
+            i += 2;
+        }
+        nk = i / 2;
+    }
+    else {
+        kwtuple = NULL;
+        k = NULL;
+    }
+    closure = PyFunction_GET_CLOSURE(func);
+#if PY_MAJOR_VERSION >= 3
+    kwdefs = PyFunction_GET_KW_DEFAULTS(func);
+#endif
+    if (argdefs != NULL) {
+        d = &PyTuple_GET_ITEM(argdefs, 0);
+        nd = Py_SIZE(argdefs);
+    }
+    else {
+        d = NULL;
+        nd = 0;
+    }
+#if PY_MAJOR_VERSION >= 3
+    result = PyEval_EvalCodeEx((PyObject*)co, globals, (PyObject *)NULL,
+                               args, (int)nargs,
+                               k, (int)nk,
+                               d, (int)nd, kwdefs, closure);
+#else
+    result = PyEval_EvalCodeEx(co, globals, (PyObject *)NULL,
+                               args, (int)nargs,
+                               k, (int)nk,
+                               d, (int)nd, closure);
+#endif
+    Py_XDECREF(kwtuple);
+done:
+    Py_LeaveRecursiveCall();
+    return result;
+}
+#endif
+#endif
+
+/* PyObjectCall */
+#if CYTHON_COMPILING_IN_CPYTHON
+static CYTHON_INLINE PyObject* __Pyx_PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw) {
+    PyObject *result;
+    ternaryfunc call = Py_TYPE(func)->tp_call;
+    if (unlikely(!call))
+        return PyObject_Call(func, arg, kw);
+    if (unlikely(Py_EnterRecursiveCall((char*)" while calling a Python object")))
+        return NULL;
+    result = (*call)(func, arg, kw);
+    Py_LeaveRecursiveCall();
+    if (unlikely(!result) && unlikely(!PyErr_Occurred())) {
+        PyErr_SetString(
+            PyExc_SystemError,
+            "NULL result without error in PyObject_Call");
+    }
+    return result;
+}
+#endif
+
+/* PyObjectCallMethO */
+#if CYTHON_COMPILING_IN_CPYTHON
+static CYTHON_INLINE PyObject* __Pyx_PyObject_CallMethO(PyObject *func, PyObject *arg) {
+    PyObject *self, *result;
+    PyCFunction cfunc;
+    cfunc = PyCFunction_GET_FUNCTION(func);
+    self = PyCFunction_GET_SELF(func);
+    if (unlikely(Py_EnterRecursiveCall((char*)" while calling a Python object")))
+        return NULL;
+    result = cfunc(self, arg);
+    Py_LeaveRecursiveCall();
+    if (unlikely(!result) && unlikely(!PyErr_Occurred())) {
+        PyErr_SetString(
+            PyExc_SystemError,
+            "NULL result without error in PyObject_Call");
+    }
+    return result;
+}
+#endif
+
+/* PyObjectCallNoArg */
+#if CYTHON_COMPILING_IN_CPYTHON
+static CYTHON_INLINE PyObject* __Pyx_PyObject_CallNoArg(PyObject *func) {
+#if CYTHON_FAST_PYCALL
+    if (PyFunction_Check(func)) {
+        return __Pyx_PyFunction_FastCall(func, NULL, 0);
+    }
+#endif
+#ifdef __Pyx_CyFunction_USED
+    if (likely(PyCFunction_Check(func) || __Pyx_CyFunction_Check(func)))
+#else
+    if (likely(PyCFunction_Check(func)))
+#endif
+    {
+        if (likely(PyCFunction_GET_FLAGS(func) & METH_NOARGS)) {
+            return __Pyx_PyObject_CallMethO(func, NULL);
+        }
+    }
+    return __Pyx_PyObject_Call(func, __pyx_empty_tuple, NULL);
+}
+#endif
+
+/* PyCFunctionFastCall */
+#if CYTHON_FAST_PYCCALL
+static CYTHON_INLINE PyObject * __Pyx_PyCFunction_FastCall(PyObject *func_obj, PyObject **args, Py_ssize_t nargs) {
+    PyCFunctionObject *func = (PyCFunctionObject*)func_obj;
+    PyCFunction meth = PyCFunction_GET_FUNCTION(func);
+    PyObject *self = PyCFunction_GET_SELF(func);
+    int flags = PyCFunction_GET_FLAGS(func);
+    assert(PyCFunction_Check(func));
+    assert(METH_FASTCALL == (flags & ~(METH_CLASS | METH_STATIC | METH_COEXIST | METH_KEYWORDS | METH_STACKLESS)));
+    assert(nargs >= 0);
+    assert(nargs == 0 || args != NULL);
+    /* _PyCFunction_FastCallDict() must not be called with an exception set,
+       because it may clear it (directly or indirectly) and so the
+       caller loses its exception */
+    assert(!PyErr_Occurred());
+    if ((PY_VERSION_HEX < 0x030700A0) || unlikely(flags & METH_KEYWORDS)) {
+        return (*((__Pyx_PyCFunctionFastWithKeywords)(void*)meth)) (self, args, nargs, NULL);
+    } else {
+        return (*((__Pyx_PyCFunctionFast)(void*)meth)) (self, args, nargs);
+    }
+}
+#endif
+
+/* PyObjectCallOneArg */
+#if CYTHON_COMPILING_IN_CPYTHON
+static PyObject* __Pyx__PyObject_CallOneArg(PyObject *func, PyObject *arg) {
+    PyObject *result;
+    PyObject *args = PyTuple_New(1);
+    if (unlikely(!args)) return NULL;
+    Py_INCREF(arg);
+    PyTuple_SET_ITEM(args, 0, arg);
+    result = __Pyx_PyObject_Call(func, args, NULL);
+    Py_DECREF(args);
+    return result;
+}
+static CYTHON_INLINE PyObject* __Pyx_PyObject_CallOneArg(PyObject *func, PyObject *arg) {
+#if CYTHON_FAST_PYCALL
+    if (PyFunction_Check(func)) {
+        return __Pyx_PyFunction_FastCall(func, &arg, 1);
+    }
+#endif
+    if (likely(PyCFunction_Check(func))) {
+        if (likely(PyCFunction_GET_FLAGS(func) & METH_O)) {
+            return __Pyx_PyObject_CallMethO(func, arg);
+#if CYTHON_FAST_PYCCALL
+        } else if (__Pyx_PyFastCFunction_Check(func)) {
+            return __Pyx_PyCFunction_FastCall(func, &arg, 1);
+#endif
+        }
+    }
+    return __Pyx__PyObject_CallOneArg(func, arg);
+}
+#else
+static CYTHON_INLINE PyObject* __Pyx_PyObject_CallOneArg(PyObject *func, PyObject *arg) {
+    PyObject *result;
+    PyObject *args = PyTuple_Pack(1, arg);
+    if (unlikely(!args)) return NULL;
+    result = __Pyx_PyObject_Call(func, args, NULL);
+    Py_DECREF(args);
+    return result;
 }
 #endif
 
@@ -3132,69 +5218,191 @@ static CYTHON_INLINE PyObject* __Pyx_PyInt_EqObjC(PyObject *op1, PyObject *op2, 
         PyObject_RichCompare(op1, op2, Py_EQ));
 }
 
-/* PyDictVersioning */
-#if CYTHON_USE_DICT_VERSIONS && CYTHON_USE_TYPE_SLOTS
-static CYTHON_INLINE PY_UINT64_T __Pyx_get_tp_dict_version(PyObject *obj) {
-    PyObject *dict = Py_TYPE(obj)->tp_dict;
-    return likely(dict) ? __PYX_GET_DICT_VERSION(dict) : 0;
-}
-static CYTHON_INLINE PY_UINT64_T __Pyx_get_object_dict_version(PyObject *obj) {
-    PyObject **dictptr = NULL;
-    Py_ssize_t offset = Py_TYPE(obj)->tp_dictoffset;
-    if (offset) {
-#if CYTHON_COMPILING_IN_CPYTHON
-        dictptr = (likely(offset > 0)) ? (PyObject **) ((char *)obj + offset) : _PyObject_GetDictPtr(obj);
-#else
-        dictptr = _PyObject_GetDictPtr(obj);
-#endif
+/* PyFloatBinop */
+#if !CYTHON_COMPILING_IN_PYPY
+static PyObject* __Pyx_PyFloat_AddObjC(PyObject *op1, PyObject *op2, double floatval, int inplace, int zerodivision_check) {
+    const double b = floatval;
+    double a, result;
+    (void)inplace;
+    (void)zerodivision_check;
+    if (likely(PyFloat_CheckExact(op1))) {
+        a = PyFloat_AS_DOUBLE(op1);
+        
+    } else
+    #if PY_MAJOR_VERSION < 3
+    if (likely(PyInt_CheckExact(op1))) {
+        a = (double) PyInt_AS_LONG(op1);
+        
+    } else
+    #endif
+    if (likely(PyLong_CheckExact(op1))) {
+        #if CYTHON_USE_PYLONG_INTERNALS
+        const digit* digits = ((PyLongObject*)op1)->ob_digit;
+        const Py_ssize_t size = Py_SIZE(op1);
+        switch (size) {
+            case  0: a = 0.0; break;
+            case -1: a = -(double) digits[0]; break;
+            case  1: a = (double) digits[0]; break;
+            case -2:
+            case 2:
+                if (8 * sizeof(unsigned long) > 2 * PyLong_SHIFT && ((8 * sizeof(unsigned long) < 53) || (1 * PyLong_SHIFT < 53))) {
+                    a = (double) (((((unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0]));
+                    if ((8 * sizeof(unsigned long) < 53) || (2 * PyLong_SHIFT < 53) || (a < (double) ((PY_LONG_LONG)1 << 53))) {
+                        if (size == -2)
+                            a = -a;
+                        break;
+                    }
+                }
+                CYTHON_FALLTHROUGH;
+            case -3:
+            case 3:
+                if (8 * sizeof(unsigned long) > 3 * PyLong_SHIFT && ((8 * sizeof(unsigned long) < 53) || (2 * PyLong_SHIFT < 53))) {
+                    a = (double) (((((((unsigned long)digits[2]) << PyLong_SHIFT) | (unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0]));
+                    if ((8 * sizeof(unsigned long) < 53) || (3 * PyLong_SHIFT < 53) || (a < (double) ((PY_LONG_LONG)1 << 53))) {
+                        if (size == -3)
+                            a = -a;
+                        break;
+                    }
+                }
+                CYTHON_FALLTHROUGH;
+            case -4:
+            case 4:
+                if (8 * sizeof(unsigned long) > 4 * PyLong_SHIFT && ((8 * sizeof(unsigned long) < 53) || (3 * PyLong_SHIFT < 53))) {
+                    a = (double) (((((((((unsigned long)digits[3]) << PyLong_SHIFT) | (unsigned long)digits[2]) << PyLong_SHIFT) | (unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0]));
+                    if ((8 * sizeof(unsigned long) < 53) || (4 * PyLong_SHIFT < 53) || (a < (double) ((PY_LONG_LONG)1 << 53))) {
+                        if (size == -4)
+                            a = -a;
+                        break;
+                    }
+                }
+                CYTHON_FALLTHROUGH;
+            default:
+        #else
+        {
+        #endif
+            a = PyLong_AsDouble(op1);
+            if (unlikely(a == -1.0 && PyErr_Occurred())) return NULL;
+            
+        }
+    } else {
+        return (inplace ? PyNumber_InPlaceAdd : PyNumber_Add)(op1, op2);
     }
-    return (dictptr && *dictptr) ? __PYX_GET_DICT_VERSION(*dictptr) : 0;
-}
-static CYTHON_INLINE int __Pyx_object_dict_version_matches(PyObject* obj, PY_UINT64_T tp_dict_version, PY_UINT64_T obj_dict_version) {
-    PyObject *dict = Py_TYPE(obj)->tp_dict;
-    if (unlikely(!dict) || unlikely(tp_dict_version != __PYX_GET_DICT_VERSION(dict)))
-        return 0;
-    return obj_dict_version == __Pyx_get_object_dict_version(obj);
+        
+        PyFPE_START_PROTECT("add", return NULL)
+        result = a + b;
+        PyFPE_END_PROTECT(result)
+        return PyFloat_FromDouble(result);
 }
 #endif
 
-/* GetModuleGlobalName */
-#if CYTHON_USE_DICT_VERSIONS
-static PyObject *__Pyx__GetModuleGlobalName(PyObject *name, PY_UINT64_T *dict_version, PyObject **dict_cached_value)
-#else
-static CYTHON_INLINE PyObject *__Pyx__GetModuleGlobalName(PyObject *name)
-#endif
-{
-    PyObject *result;
-#if !CYTHON_AVOID_BORROWED_REFS
-#if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030500A1
-    result = _PyDict_GetItem_KnownHash(__pyx_d, name, ((PyASCIIObject *) name)->hash);
-    __PYX_UPDATE_DICT_CACHE(__pyx_d, result, *dict_cached_value, *dict_version)
-    if (likely(result)) {
-        return __Pyx_NewRef(result);
-    } else if (unlikely(PyErr_Occurred())) {
-        return NULL;
+/* PyFloatBinop */
+  #if !CYTHON_COMPILING_IN_PYPY
+static PyObject* __Pyx_PyFloat_SubtractObjC(PyObject *op1, PyObject *op2, double floatval, int inplace, int zerodivision_check) {
+    const double b = floatval;
+    double a, result;
+    (void)inplace;
+    (void)zerodivision_check;
+    if (likely(PyFloat_CheckExact(op1))) {
+        a = PyFloat_AS_DOUBLE(op1);
+        
+    } else
+    #if PY_MAJOR_VERSION < 3
+    if (likely(PyInt_CheckExact(op1))) {
+        a = (double) PyInt_AS_LONG(op1);
+        
+    } else
+    #endif
+    if (likely(PyLong_CheckExact(op1))) {
+        #if CYTHON_USE_PYLONG_INTERNALS
+        const digit* digits = ((PyLongObject*)op1)->ob_digit;
+        const Py_ssize_t size = Py_SIZE(op1);
+        switch (size) {
+            case  0: a = 0.0; break;
+            case -1: a = -(double) digits[0]; break;
+            case  1: a = (double) digits[0]; break;
+            case -2:
+            case 2:
+                if (8 * sizeof(unsigned long) > 2 * PyLong_SHIFT && ((8 * sizeof(unsigned long) < 53) || (1 * PyLong_SHIFT < 53))) {
+                    a = (double) (((((unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0]));
+                    if ((8 * sizeof(unsigned long) < 53) || (2 * PyLong_SHIFT < 53) || (a < (double) ((PY_LONG_LONG)1 << 53))) {
+                        if (size == -2)
+                            a = -a;
+                        break;
+                    }
+                }
+                CYTHON_FALLTHROUGH;
+            case -3:
+            case 3:
+                if (8 * sizeof(unsigned long) > 3 * PyLong_SHIFT && ((8 * sizeof(unsigned long) < 53) || (2 * PyLong_SHIFT < 53))) {
+                    a = (double) (((((((unsigned long)digits[2]) << PyLong_SHIFT) | (unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0]));
+                    if ((8 * sizeof(unsigned long) < 53) || (3 * PyLong_SHIFT < 53) || (a < (double) ((PY_LONG_LONG)1 << 53))) {
+                        if (size == -3)
+                            a = -a;
+                        break;
+                    }
+                }
+                CYTHON_FALLTHROUGH;
+            case -4:
+            case 4:
+                if (8 * sizeof(unsigned long) > 4 * PyLong_SHIFT && ((8 * sizeof(unsigned long) < 53) || (3 * PyLong_SHIFT < 53))) {
+                    a = (double) (((((((((unsigned long)digits[3]) << PyLong_SHIFT) | (unsigned long)digits[2]) << PyLong_SHIFT) | (unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0]));
+                    if ((8 * sizeof(unsigned long) < 53) || (4 * PyLong_SHIFT < 53) || (a < (double) ((PY_LONG_LONG)1 << 53))) {
+                        if (size == -4)
+                            a = -a;
+                        break;
+                    }
+                }
+                CYTHON_FALLTHROUGH;
+            default:
+        #else
+        {
+        #endif
+            a = PyLong_AsDouble(op1);
+            if (unlikely(a == -1.0 && PyErr_Occurred())) return NULL;
+            
+        }
+    } else {
+        return (inplace ? PyNumber_InPlaceSubtract : PyNumber_Subtract)(op1, op2);
     }
-#else
-    result = PyDict_GetItem(__pyx_d, name);
-    __PYX_UPDATE_DICT_CACHE(__pyx_d, result, *dict_cached_value, *dict_version)
-    if (likely(result)) {
-        return __Pyx_NewRef(result);
-    }
+        
+        PyFPE_START_PROTECT("subtract", return NULL)
+        result = a - b;
+        PyFPE_END_PROTECT(result)
+        return PyFloat_FromDouble(result);
+}
 #endif
-#else
-    result = PyObject_GetItem(__pyx_d, name);
-    __PYX_UPDATE_DICT_CACHE(__pyx_d, result, *dict_cached_value, *dict_version)
-    if (likely(result)) {
-        return __Pyx_NewRef(result);
+
+/* PyObjectCall2Args */
+    static CYTHON_UNUSED PyObject* __Pyx_PyObject_Call2Args(PyObject* function, PyObject* arg1, PyObject* arg2) {
+    PyObject *args, *result = NULL;
+    #if CYTHON_FAST_PYCALL
+    if (PyFunction_Check(function)) {
+        PyObject *args[2] = {arg1, arg2};
+        return __Pyx_PyFunction_FastCall(function, args, 2);
     }
-    PyErr_Clear();
-#endif
-    return __Pyx_GetBuiltinName(name);
+    #endif
+    #if CYTHON_FAST_PYCCALL
+    if (__Pyx_PyFastCFunction_Check(function)) {
+        PyObject *args[2] = {arg1, arg2};
+        return __Pyx_PyCFunction_FastCall(function, args, 2);
+    }
+    #endif
+    args = PyTuple_New(2);
+    if (unlikely(!args)) goto done;
+    Py_INCREF(arg1);
+    PyTuple_SET_ITEM(args, 0, arg1);
+    Py_INCREF(arg2);
+    PyTuple_SET_ITEM(args, 1, arg2);
+    Py_INCREF(function);
+    result = __Pyx_PyObject_Call(function, args, NULL);
+    Py_DECREF(args);
+    Py_DECREF(function);
+done:
+    return result;
 }
 
 /* Import */
-static PyObject *__Pyx_Import(PyObject *name, PyObject *from_list, int level) {
+    static PyObject *__Pyx_Import(PyObject *name, PyObject *from_list, int level) {
     PyObject *empty_list = 0;
     PyObject *module = 0;
     PyObject *global_dict = 0;
@@ -3259,7 +5467,7 @@ bad:
 }
 
 /* ImportFrom */
-static PyObject* __Pyx_ImportFrom(PyObject* module, PyObject* name) {
+    static PyObject* __Pyx_ImportFrom(PyObject* module, PyObject* name) {
     PyObject* value = __Pyx_PyObject_GetAttrStr(module, name);
     if (unlikely(!value) && PyErr_ExceptionMatches(PyExc_AttributeError)) {
         PyErr_Format(PyExc_ImportError,
@@ -3273,7 +5481,7 @@ static PyObject* __Pyx_ImportFrom(PyObject* module, PyObject* name) {
 }
 
 /* CalculateMetaclass */
-static PyObject *__Pyx_CalculateMetaclass(PyTypeObject *metaclass, PyObject *bases) {
+    static PyObject *__Pyx_CalculateMetaclass(PyTypeObject *metaclass, PyObject *bases) {
     Py_ssize_t i, nbases = PyTuple_GET_SIZE(bases);
     for (i=0; i < nbases; i++) {
         PyTypeObject *tmptype;
@@ -3312,7 +5520,7 @@ static PyObject *__Pyx_CalculateMetaclass(PyTypeObject *metaclass, PyObject *bas
 }
 
 /* Py3ClassCreate */
-static PyObject *__Pyx_Py3MetaclassPrepare(PyObject *metaclass, PyObject *bases, PyObject *name,
+    static PyObject *__Pyx_Py3MetaclassPrepare(PyObject *metaclass, PyObject *bases, PyObject *name,
                                            PyObject *qualname, PyObject *mkw, PyObject *modname, PyObject *doc) {
     PyObject *ns;
     if (metaclass) {
@@ -3379,7 +5587,7 @@ static PyObject *__Pyx_Py3ClassCreate(PyObject *metaclass, PyObject *name, PyObj
 }
 
 /* FetchCommonType */
-static PyTypeObject* __Pyx_FetchCommonType(PyTypeObject* type) {
+    static PyTypeObject* __Pyx_FetchCommonType(PyTypeObject* type) {
     PyObject* fake_module;
     PyTypeObject* cached_type = NULL;
     fake_module = PyImport_AddModule((char*) "_cython_" CYTHON_ABI);
@@ -3418,7 +5626,7 @@ bad:
 }
 
 /* CythonFunctionShared */
-#include <structmember.h>
+    #include <structmember.h>
 static PyObject *
 __Pyx_CyFunction_get_doc(__pyx_CyFunctionObject *op, CYTHON_UNUSED void *closure)
 {
@@ -4023,7 +6231,7 @@ static CYTHON_INLINE void __Pyx_CyFunction_SetAnnotationsDict(PyObject *func, Py
 }
 
 /* CythonFunction */
-static PyObject *__Pyx_CyFunction_New(PyMethodDef *ml, int flags, PyObject* qualname,
+    static PyObject *__Pyx_CyFunction_New(PyMethodDef *ml, int flags, PyObject* qualname,
                                       PyObject *closure, PyObject *module, PyObject* globals, PyObject* code) {
     PyObject *op = __Pyx_CyFunction_Init(
         PyObject_GC_New(__pyx_CyFunctionObject, __pyx_CyFunctionType),
@@ -4036,7 +6244,7 @@ static PyObject *__Pyx_CyFunction_New(PyMethodDef *ml, int flags, PyObject* qual
 }
 
 /* BytesEquals */
-static CYTHON_INLINE int __Pyx_PyBytes_Equals(PyObject* s1, PyObject* s2, int equals) {
+    static CYTHON_INLINE int __Pyx_PyBytes_Equals(PyObject* s1, PyObject* s2, int equals) {
 #if CYTHON_COMPILING_IN_PYPY
     return PyObject_RichCompareBool(s1, s2, equals);
 #else
@@ -4083,7 +6291,7 @@ static CYTHON_INLINE int __Pyx_PyBytes_Equals(PyObject* s1, PyObject* s2, int eq
 }
 
 /* UnicodeEquals */
-static CYTHON_INLINE int __Pyx_PyUnicode_Equals(PyObject* s1, PyObject* s2, int equals) {
+    static CYTHON_INLINE int __Pyx_PyUnicode_Equals(PyObject* s1, PyObject* s2, int equals) {
 #if CYTHON_COMPILING_IN_PYPY
     return PyObject_RichCompareBool(s1, s2, equals);
 #else
@@ -4184,189 +6392,8 @@ return_ne:
 #endif
 }
 
-/* PyFunctionFastCall */
-#if CYTHON_FAST_PYCALL
-static PyObject* __Pyx_PyFunction_FastCallNoKw(PyCodeObject *co, PyObject **args, Py_ssize_t na,
-                                               PyObject *globals) {
-    PyFrameObject *f;
-    PyThreadState *tstate = __Pyx_PyThreadState_Current;
-    PyObject **fastlocals;
-    Py_ssize_t i;
-    PyObject *result;
-    assert(globals != NULL);
-    /* XXX Perhaps we should create a specialized
-       PyFrame_New() that doesn't take locals, but does
-       take builtins without sanity checking them.
-       */
-    assert(tstate != NULL);
-    f = PyFrame_New(tstate, co, globals, NULL);
-    if (f == NULL) {
-        return NULL;
-    }
-    fastlocals = __Pyx_PyFrame_GetLocalsplus(f);
-    for (i = 0; i < na; i++) {
-        Py_INCREF(*args);
-        fastlocals[i] = *args++;
-    }
-    result = PyEval_EvalFrameEx(f,0);
-    ++tstate->recursion_depth;
-    Py_DECREF(f);
-    --tstate->recursion_depth;
-    return result;
-}
-#if 1 || PY_VERSION_HEX < 0x030600B1
-static PyObject *__Pyx_PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs, PyObject *kwargs) {
-    PyCodeObject *co = (PyCodeObject *)PyFunction_GET_CODE(func);
-    PyObject *globals = PyFunction_GET_GLOBALS(func);
-    PyObject *argdefs = PyFunction_GET_DEFAULTS(func);
-    PyObject *closure;
-#if PY_MAJOR_VERSION >= 3
-    PyObject *kwdefs;
-#endif
-    PyObject *kwtuple, **k;
-    PyObject **d;
-    Py_ssize_t nd;
-    Py_ssize_t nk;
-    PyObject *result;
-    assert(kwargs == NULL || PyDict_Check(kwargs));
-    nk = kwargs ? PyDict_Size(kwargs) : 0;
-    if (Py_EnterRecursiveCall((char*)" while calling a Python object")) {
-        return NULL;
-    }
-    if (
-#if PY_MAJOR_VERSION >= 3
-            co->co_kwonlyargcount == 0 &&
-#endif
-            likely(kwargs == NULL || nk == 0) &&
-            co->co_flags == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE)) {
-        if (argdefs == NULL && co->co_argcount == nargs) {
-            result = __Pyx_PyFunction_FastCallNoKw(co, args, nargs, globals);
-            goto done;
-        }
-        else if (nargs == 0 && argdefs != NULL
-                 && co->co_argcount == Py_SIZE(argdefs)) {
-            /* function called with no arguments, but all parameters have
-               a default value: use default values as arguments .*/
-            args = &PyTuple_GET_ITEM(argdefs, 0);
-            result =__Pyx_PyFunction_FastCallNoKw(co, args, Py_SIZE(argdefs), globals);
-            goto done;
-        }
-    }
-    if (kwargs != NULL) {
-        Py_ssize_t pos, i;
-        kwtuple = PyTuple_New(2 * nk);
-        if (kwtuple == NULL) {
-            result = NULL;
-            goto done;
-        }
-        k = &PyTuple_GET_ITEM(kwtuple, 0);
-        pos = i = 0;
-        while (PyDict_Next(kwargs, &pos, &k[i], &k[i+1])) {
-            Py_INCREF(k[i]);
-            Py_INCREF(k[i+1]);
-            i += 2;
-        }
-        nk = i / 2;
-    }
-    else {
-        kwtuple = NULL;
-        k = NULL;
-    }
-    closure = PyFunction_GET_CLOSURE(func);
-#if PY_MAJOR_VERSION >= 3
-    kwdefs = PyFunction_GET_KW_DEFAULTS(func);
-#endif
-    if (argdefs != NULL) {
-        d = &PyTuple_GET_ITEM(argdefs, 0);
-        nd = Py_SIZE(argdefs);
-    }
-    else {
-        d = NULL;
-        nd = 0;
-    }
-#if PY_MAJOR_VERSION >= 3
-    result = PyEval_EvalCodeEx((PyObject*)co, globals, (PyObject *)NULL,
-                               args, (int)nargs,
-                               k, (int)nk,
-                               d, (int)nd, kwdefs, closure);
-#else
-    result = PyEval_EvalCodeEx(co, globals, (PyObject *)NULL,
-                               args, (int)nargs,
-                               k, (int)nk,
-                               d, (int)nd, closure);
-#endif
-    Py_XDECREF(kwtuple);
-done:
-    Py_LeaveRecursiveCall();
-    return result;
-}
-#endif
-#endif
-
-/* PyObjectCall */
-#if CYTHON_COMPILING_IN_CPYTHON
-static CYTHON_INLINE PyObject* __Pyx_PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw) {
-    PyObject *result;
-    ternaryfunc call = Py_TYPE(func)->tp_call;
-    if (unlikely(!call))
-        return PyObject_Call(func, arg, kw);
-    if (unlikely(Py_EnterRecursiveCall((char*)" while calling a Python object")))
-        return NULL;
-    result = (*call)(func, arg, kw);
-    Py_LeaveRecursiveCall();
-    if (unlikely(!result) && unlikely(!PyErr_Occurred())) {
-        PyErr_SetString(
-            PyExc_SystemError,
-            "NULL result without error in PyObject_Call");
-    }
-    return result;
-}
-#endif
-
-/* PyObjectCallMethO */
-#if CYTHON_COMPILING_IN_CPYTHON
-static CYTHON_INLINE PyObject* __Pyx_PyObject_CallMethO(PyObject *func, PyObject *arg) {
-    PyObject *self, *result;
-    PyCFunction cfunc;
-    cfunc = PyCFunction_GET_FUNCTION(func);
-    self = PyCFunction_GET_SELF(func);
-    if (unlikely(Py_EnterRecursiveCall((char*)" while calling a Python object")))
-        return NULL;
-    result = cfunc(self, arg);
-    Py_LeaveRecursiveCall();
-    if (unlikely(!result) && unlikely(!PyErr_Occurred())) {
-        PyErr_SetString(
-            PyExc_SystemError,
-            "NULL result without error in PyObject_Call");
-    }
-    return result;
-}
-#endif
-
-/* PyObjectCallNoArg */
-#if CYTHON_COMPILING_IN_CPYTHON
-static CYTHON_INLINE PyObject* __Pyx_PyObject_CallNoArg(PyObject *func) {
-#if CYTHON_FAST_PYCALL
-    if (PyFunction_Check(func)) {
-        return __Pyx_PyFunction_FastCall(func, NULL, 0);
-    }
-#endif
-#ifdef __Pyx_CyFunction_USED
-    if (likely(PyCFunction_Check(func) || __Pyx_CyFunction_Check(func)))
-#else
-    if (likely(PyCFunction_Check(func)))
-#endif
-    {
-        if (likely(PyCFunction_GET_FLAGS(func) & METH_NOARGS)) {
-            return __Pyx_PyObject_CallMethO(func, NULL);
-        }
-    }
-    return __Pyx_PyObject_Call(func, __pyx_empty_tuple, NULL);
-}
-#endif
-
 /* PyErrFetchRestore */
-#if CYTHON_FAST_THREAD_STATE
+    #if CYTHON_FAST_THREAD_STATE
 static CYTHON_INLINE void __Pyx_ErrRestoreInState(PyThreadState *tstate, PyObject *type, PyObject *value, PyObject *tb) {
     PyObject *tmp_type, *tmp_value, *tmp_tb;
     tmp_type = tstate->curexc_type;
@@ -4390,7 +6417,7 @@ static CYTHON_INLINE void __Pyx_ErrFetchInState(PyThreadState *tstate, PyObject 
 #endif
 
 /* CLineInTraceback */
-#ifndef CYTHON_CLINE_IN_TRACEBACK
+    #ifndef CYTHON_CLINE_IN_TRACEBACK
 static int __Pyx_CLineForTraceback(CYTHON_NCP_UNUSED PyThreadState *tstate, int c_line) {
     PyObject *use_cline;
     PyObject *ptype, *pvalue, *ptraceback;
@@ -4432,7 +6459,7 @@ static int __Pyx_CLineForTraceback(CYTHON_NCP_UNUSED PyThreadState *tstate, int 
 #endif
 
 /* CodeObjectCache */
-static int __pyx_bisect_code_objects(__Pyx_CodeObjectCacheEntry* entries, int count, int code_line) {
+    static int __pyx_bisect_code_objects(__Pyx_CodeObjectCacheEntry* entries, int count, int code_line) {
     int start = 0, mid = 0, end = count - 1;
     if (end >= 0 && code_line > entries[end].code_line) {
         return count;
@@ -4512,7 +6539,7 @@ static void __pyx_insert_code_object(int code_line, PyCodeObject* code_object) {
 }
 
 /* AddTraceback */
-#include "compile.h"
+    #include "compile.h"
 #include "frameobject.h"
 #include "traceback.h"
 static PyCodeObject* __Pyx_CreateCodeObjectForTraceback(
@@ -4597,7 +6624,7 @@ bad:
 }
 
 /* Print */
-#if !CYTHON_COMPILING_IN_PYPY && PY_MAJOR_VERSION < 3
+    #if !CYTHON_COMPILING_IN_PYPY && PY_MAJOR_VERSION < 3
 static PyObject *__Pyx_GetStdout(void) {
     PyObject *f = PySys_GetObject((char *)"stdout");
     if (!f) {
@@ -4703,7 +6730,7 @@ bad:
 #endif
 
 /* PrintOne */
-#if !CYTHON_COMPILING_IN_PYPY && PY_MAJOR_VERSION < 3
+    #if !CYTHON_COMPILING_IN_PYPY && PY_MAJOR_VERSION < 3
 static int __Pyx_PrintOne(PyObject* f, PyObject *o) {
     if (!f) {
         if (!(f = __Pyx_GetStdout()))
@@ -4740,7 +6767,7 @@ static int __Pyx_PrintOne(PyObject* stream, PyObject *o) {
 #endif
 
 /* CIntToPy */
-static CYTHON_INLINE PyObject* __Pyx_PyInt_From_long(long value) {
+    static CYTHON_INLINE PyObject* __Pyx_PyInt_From_long(long value) {
 #ifdef __Pyx_HAS_GCC_DIAGNOSTIC
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wconversion"
@@ -4778,7 +6805,7 @@ static CYTHON_INLINE PyObject* __Pyx_PyInt_From_long(long value) {
 }
 
 /* CIntFromPyVerify */
-#define __PYX_VERIFY_RETURN_INT(target_type, func_type, func_value)\
+    #define __PYX_VERIFY_RETURN_INT(target_type, func_type, func_value)\
     __PYX__VERIFY_RETURN_INT(target_type, func_type, func_value, 0)
 #define __PYX_VERIFY_RETURN_INT_EXC(target_type, func_type, func_value)\
     __PYX__VERIFY_RETURN_INT(target_type, func_type, func_value, 1)
@@ -4800,7 +6827,7 @@ static CYTHON_INLINE PyObject* __Pyx_PyInt_From_long(long value) {
     }
 
 /* CIntFromPy */
-static CYTHON_INLINE long __Pyx_PyInt_As_long(PyObject *x) {
+    static CYTHON_INLINE long __Pyx_PyInt_As_long(PyObject *x) {
 #ifdef __Pyx_HAS_GCC_DIAGNOSTIC
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wconversion"
@@ -4996,7 +7023,7 @@ raise_neg_overflow:
 }
 
 /* CIntFromPy */
-static CYTHON_INLINE int __Pyx_PyInt_As_int(PyObject *x) {
+    static CYTHON_INLINE int __Pyx_PyInt_As_int(PyObject *x) {
 #ifdef __Pyx_HAS_GCC_DIAGNOSTIC
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wconversion"
@@ -5192,7 +7219,7 @@ raise_neg_overflow:
 }
 
 /* FastTypeChecks */
-#if CYTHON_COMPILING_IN_CPYTHON
+    #if CYTHON_COMPILING_IN_CPYTHON
 static int __Pyx_InBases(PyTypeObject *a, PyTypeObject *b) {
     while (a) {
         a = a->tp_base;
@@ -5292,7 +7319,7 @@ static CYTHON_INLINE int __Pyx_PyErr_GivenExceptionMatches2(PyObject *err, PyObj
 #endif
 
 /* CheckBinaryVersion */
-static int __Pyx_check_binary_version(void) {
+    static int __Pyx_check_binary_version(void) {
     char ctversion[4], rtversion[4];
     PyOS_snprintf(ctversion, 4, "%d.%d", PY_MAJOR_VERSION, PY_MINOR_VERSION);
     PyOS_snprintf(rtversion, 4, "%s", Py_GetVersion());
@@ -5308,7 +7335,7 @@ static int __Pyx_check_binary_version(void) {
 }
 
 /* InitStrings */
-static int __Pyx_InitStrings(__Pyx_StringTabEntry *t) {
+    static int __Pyx_InitStrings(__Pyx_StringTabEntry *t) {
     while (t->p) {
         #if PY_MAJOR_VERSION < 3
         if (t->is_unicode) {
