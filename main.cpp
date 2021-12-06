@@ -65,10 +65,11 @@ void setup()
     WiFi.mode(WIFI_STA);
     WiFi.begin(ssid, password); //try to connect with wifi
     configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
-    printf("Current Time : ");
-    printLocalTime();
+
     delay(5000);
     Serial.println("\n++++ ESP Feedback Loop - Kyle Jungbluth ++++");
+    Serial.print("Current Time : ");
+    printLocalTime();
     Serial.print("Connecting to: ");
     Serial.print(ssid);
     while (WiFi.status() != WL_CONNECTED)
@@ -146,7 +147,7 @@ void loop()
         time_t mytime = time(NULL);
         char *time_str = ctime(&mytime);
         time_str[strlen(time_str) - 1] = '\0';
-        printf("Current Time : ");
+        Serial.print("Current Time : ");
         printLocalTime();
         Serial.println("--------------------------------------");
         delay(5000);
