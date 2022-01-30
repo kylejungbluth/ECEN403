@@ -14,11 +14,16 @@
 //https://ecen404-team17.000webhostapp.com/
 #define HOST "ecen404-team17.000webhostapp.com"
 
-const char *ssid = "RamRanch";
-const char *password = "redcream211";
+// const char *ssid = "WifiNetwork";
+// const char *password = "password";
+
+// const char *ssid = "ZACH-IoT";
+
+// const char *ssid = "RamRanch";
+// const char *password = "redcream211";
 
 const char *ntpServer = "pool.ntp.org";
-const long gmtOffset_sec = 0;
+const long gmtOffset_sec = -6 * 60 * 60;
 const int daylightOffset_sec = 3600;
 
 static int *model;
@@ -219,46 +224,6 @@ void sensor_2(struct Models CurrentModel)
         Serial.println("Don't Release Magnesium.");
     }
 }
-
-// void sensor_3(struct Models CurrentModel)
-// {
-//     if (calcium < CurrentModel.calcium)
-//     {
-//         //actuator.release()
-//         //open_actuator_3();
-//         //close_actuator_3();
-//         calcium += .5;
-//         printf("Nutrient Level: %f", calcium);
-//         printf(" ML Level: %f", CurrentModel.calcium);
-//         printf(" Release Magnesium.\n");
-//     }
-//     else
-//     {
-//         printf("Nutrient Level: %f", calcium);
-//         printf(" ML Level: %f", CurrentModel.calcium);
-//         printf(" Don't Release Magnesium.\n");
-//     }
-// }
-
-// void sensor_4(struct Models CurrentModel)
-// {
-//     if (phosphorus < CurrentModel.phosphorus)
-//     {
-//         //actuator.release()
-//         //open_actuator_4();
-//         //close_actuator_4();
-//         phosphorus += .5;
-//         printf("Nutrient Level: %f", phosphorus);
-//         printf(" ML Level: %f", CurrentModel.phosphorus);
-//         printf(" Release Magnesium.\n");
-//     }
-//     else
-//     {
-//         printf("Nutrient Level: %f", phosphorus);
-//         printf(" ML Level: %f", CurrentModel.phosphorus);
-//         printf(" Don't Release Magnesium.\n");
-//     }
-// }
 
 void nutrient_absorption()
 {
