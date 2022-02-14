@@ -45,23 +45,25 @@ def sensordata():
                         measurements = gdx.read()
                         if measurements == None:
                             break
-                        print(measurements)
+                        #print(measurements)
                         sumnum[0] += measurements[0]
                         sumnum[1] += measurements[1]
-                print("ammonium: " + str(sumnum[0]/10))
+                #print("ammonium: " + str(sumnum[0]/10))
                 print("calcium: " + str(sumnum[1]/10))
                 ammoniumavg = sumnum[0]/10
                 calciumavg = sumnum[1]/10
 
-                return ammoniumavg
-                return calciumavg
+                return (ammoniumavg, calciumavg)
+
 
                 ##measurements.clear()
-        gdx.stop()
-        gdx.close()
+                gdx.stop()
+                gdx.close()
 
 
 
 
+
+sensordata()
 
 sensordata()
