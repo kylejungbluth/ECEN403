@@ -1,19 +1,21 @@
 import time
 import random
-from gdx import gdxcc
 from enum import Enum
+import actuator
 
-class Model(Enum):
-    low = 0
-    high = 1
+# class Model(Enum):
+#     low = 0
+#     high = 1
 
 class Model1(object):
     def __init__(self):
+        self.name = 'Model 1'
         self.ammonium = .75
         self.calcium = .5
 
 class Model2(object):
     def __init__(self):
+        self.name = 'Model 2'
         self.ammonium = 1.5
         self.calcium = 1.1
 
@@ -24,7 +26,8 @@ class Feedback():
     def __init__(self):
         print("Setting System Up...")
         # class variable representing model object; holds double values for each nutrient
-        self.model = Model.low
+        #self.model = Model.low
+        self.actuator = actuator.Actuator
         self.nutrient_model = Model1
 
         self.ammonium = self.nutrient_model.ammonium
@@ -34,7 +37,7 @@ class Feedback():
         self.current_calcium = 0
 
         self.update_model()
-        print("Current model: " + self.model.name)
+        print("Current model: " + self.nutrient_model.name)
 
     '''
         Update to nutrient quantity according to current model
@@ -51,10 +54,10 @@ class Feedback():
     def updateML(self, input):
         ML_input = input
         if (ML_input == 0):
-            self.model = Model.low
+            #self.model = Model.low
             self.nutrient_model = Model1
         elif (ML_input == 1):
-            self.model = Model.high
+            #self.model = Model.high
             self.nutrient_model = Model2
         else:
             print("Unsucessful value returned from ML algorithm. Please make sure either 0 or 1 is returned.")
@@ -76,35 +79,9 @@ class Feedback():
         Requires: Sensor output WIP
     '''
 
-    def sensordata(self):
-        gdxcc.open_usb()
-        gdxcc.select_sensors([[3], [4]])
-        gdxcc.start(period=1000)
-
-        while (1):
-
-            sumnum = [0, 0]
-            for i in range(0, 10):
-
-                measurements = gdxcc.read()
-                if measurements == None:
-                    break
-                print(measurements)
-                sumnum[0] += measurements[0]
-                sumnum[1] += measurements[1]
-            print("ammonium: " + str(sumnum[0] / 10))
-            print("calcium: " + str(sumnum[1] / 10))
-            ammoniumavg = sumnum[0] / 10
-            calciumavg = sumnum[1] / 10
-
-            return ammoniumavg, calciumavg
-
-            ##measurements.clear()
-        gdx.stop()
-        gdx.close()
     def sensor1(self):
         if (self.current_ammonium < self.ammonium):
-            #actuator1.release()
+            self.actuator.call_motor1()
             self.current_ammonium += .5
             print("Nutrient Level: ", round(self.current_ammonium, 2), "ML Level: ", round(self.ammonium, 2), "Release ammonium")
             pass
@@ -114,7 +91,7 @@ class Feedback():
 
     def sensor2(self):
         if (self.current_calcium < self.calcium):
-            # actuator2.release()
+            self.actuator.call_motor2()
             self.current_calcium += .5
             print("Nutrient Level: ", round(self.current_calcium, 2),
                   "ML Level: ", round(self.calcium, 2), "Release magnesium")
@@ -152,4 +129,3 @@ if __name__ == "__main__":
     feedback.run()
     print("Feedback Loop Completed")
     print("Thank you for using our nutrient delivery system.")
-
