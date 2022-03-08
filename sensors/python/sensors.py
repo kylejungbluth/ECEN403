@@ -31,7 +31,7 @@ class Sensor():
 
         gdx.start(1000)
 
-    def run(self):
+    def get_curr_nut_lvls(self):
         measurements_cal = []
         measurements_amm = []
         for i in range(0, 5):
@@ -41,7 +41,6 @@ class Sensor():
             measurement = self.output(measurement)
             measurements_cal.append(measurement[0])
             measurements_amm.append(measurement[1])
-
         self.close()
 
         #average it
