@@ -1,272 +1,321 @@
-//#include <Arduino.h>
-#include <time.h>
+/*******************************************************************************
+  Main Source File
+
+  Company:
+    Microchip Technology Inc.
+
+  File Name:
+    main.c
+
+  Summary:
+    This file contains the "main" function for a project.
+
+  Description:
+    This file contains the "main" function for a project.  The
+    "main" function calls the "SYS_Initialize" function to initialize the state
+    machines of all modules in the system
+ *******************************************************************************/
+
+// *****************************************************************************
+// *****************************************************************************
+// Section: Included Files
+// *****************************************************************************
+// *****************************************************************************
+
+#include <stddef.h>                     // Defines NULL
+#include <stdbool.h>                    // Defines true
+#include <stdlib.h>                     // Defines EXIT_FAILURE
+#include "definitions.h"                // SYS function prototypes
+#include <xc.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-//#include <ESP8266WiFi.h>
-//#include <ESP8266HTTPClient.h>
-//#include <dos.h>
-//#include <Windows.h>
-#include <Wifi.h>
-#include <WiFiClient.h>
-#include <HardwareSerial.h>
-#include <string.h>
+
+#define SYS_FREQ 48000000               // system frequency set at 48 MHz
+#define _XTAL_FREQ 48000000             // internal frequency set at 48 MHz
+
+#define steps 200                       // 1.8 degrees per step, 200 steps per revolution
+
+#define cw 0                            // define clockwise as char 0
+#define ccw 1                           // define counter clockwise as char 1
+
+// on board led
+#define board_led PORTAbits.RA0
+
+// motor 1
+#define direction1 PORTBbits.RB12   
+#define pulse1 PORTBbits.RB13
+#define button1_L PORTBbits.RB6
+#define button1_R PORTBbits.RB7
+// motor 2
+#define direction2 PORTBbits.RB14 
+#define pulse2 PORTBbits.RB15
+#define button2_L PORTBbits.RB8
+#define button2_R PORTBbits.RB9
+// confirm button
+#define confirm PORTBbits.RB10
+
+#define input1 PORTAbits.RA2
+#define output1 PORTBbits.RB4
+
+#define input2 PORTAbits.RA3
+#define output2 PORTAbits.RA4
 
 
-
-//website password:404team17
-//db password: @<dB2rYHc{mLi<yW
-//db username: id18016886_modeluser	
-//db name: id18016886_modeldb
-//https://ecen404-team17.000webhostapp.com/
-#define HOST "ecen404-team17.000webhostapp.com"          // Enter HOST URL without "http:// "  and "/" at the end of URL
-
-const char* ssid = "temporary";
-const char* password = "freewifi";
-static int *model;
-
-double ammonium;
-double magnesium;
-double calcium;
-double phosphorus;
-
-struct Models {
-	char name;
-	double ammonium;
-	double magnesium;
-	double calcium;
-	double phosphorus;
-};
-
-struct Models Model1;
-struct Models Model2;
-static struct Models *CurrentModel;
-
-void set_global_values();
-void sensor_1(struct Models CurrentModel);
-void sensor_2(struct Models CurrentModel);
-void sensor_3(struct Models CurrentModel);
-void sensor_4(struct Models CurrentModel);
-void nutrient_absorption();
-void update_ML(int random);
-void open_actuator_1();
-void close_actuator_1();
-void open_actuator_2();
-void close_actuator_2();
-void open_actuator_3();
-void close_actuator_3();
-void open_actuator_4();
-void close_actuator_4();
-void printDouble( double val, unsigned int precision);
-
-int main() {
-
-	Serial.begin(80000); 
-	WiFi.mode(WIFI_STA);           
-	WiFi.begin(ssid, password); //try to connect with wifi
-	delay(5000);
-	Serial.println("++++ ESP Feedback Loop - Kyle Jungbluth ++++");
-	Serial.print("Connecting to: ");
-	Serial.print(ssid);
-	while (WiFi.status() != WL_CONNECTED) 
-	{ printf(".");
-		delay(500); }
-	
-	Serial.println("\nConnected to " + String(ssid));
-	Serial.print("IP Address is : ");
-	Serial.println(WiFi.localIP());    //print local IP address
-	
-	set_global_values();
-	Serial.println("Set global values: ");
-	Serial.print("Model 1 Ammonium: "); printDouble(Model1.ammonium, 10);
-	Serial.print("Model 1 Magnesium: "); printDouble(Model1.magnesium, 10);
-	Serial.print("Model 2 Ammonium: "); printDouble(Model2.ammonium, 10);
-	Serial.print("Model 2 Magnesium: "); printDouble(Model2.magnesium, 10);
-	Serial.println();
-
-	ammonium = 2;
-	magnesium = 1.8;
-	calcium = 4;
-	phosphorus = 6;
-	Serial.println("Initial Nutrient Levels: ");
-	Serial.print("Ammonium: "); printDouble(ammonium, 10);
-	Serial.print("Magnesium: "); printDouble(magnesium, 10);
-	Serial.println();
-
-	time_t t;
-	srand((unsigned)time(&t));
-
-	while (1) {
-		if (WiFi.status() == WL_CONNECTED) {
-			WiFiClient WifiClient;
-			HTTPClient http;
-			
-			http.begin(WifiClient, "http://ecen404-team17.000webhostapp.com/dbreadlast.php"); // Connect to host where MySQL databse is hosted
-			int httpCode = http.GET();
-			if (httpCode > 0) {
-				// HTTP header has been send and Server response header has been handled
-				Serial.printf("[HTTP] GET... code: %d\n", httpCode);
-
-				// file found at server
-				if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY) {
-				String payload = http.getString();
-				Serial.println(payload);
-				String stringchar = payload.substring(46,47);
-				int temp = stringchar.toInt();
-				model = &temp;
-				delay(10);
-				update_ML(*model);
-				Serial.println("Current Model: " + (*CurrentModel).name);
-				delay(10);
-				}
-				
-			} 
-			else {
-				Serial.println("[HTTP] Error: GET Failed.");
-			}
-			http.end();
-			Serial.println("Entering Loop\n");
-			delay(1000);
-			nutrient_absorption();
-			sensor_1((*CurrentModel));
-			sensor_2((*CurrentModel));
-			time_t mytime = time(NULL);
-			char * time_str = ctime(&mytime);
-			time_str[strlen(time_str)-1] = '\0';
-			printf("Current Time : %s\n", time_str);
-			Serial.println("--------------------------------------");
-			delay(5000);
-		}
-	}
-	return 0;
+// delay function in microseconds
+void delay_us(unsigned int us) {
+    // convert microseconds into how many clock ticks it will take
+    us *= SYS_FREQ / 1000000 / 2; // core timer updates every 2 ticks
+    _CP0_SET_COUNT(0); // set core timer count to 0
+    while(us > _CP0_GET_COUNT()); // wait until core timer reaches number we calculated
 }
 
-void set_global_values() {
-	Model1.name = "Model 1";
-	Model1.ammonium = .75;
-	Model1.magnesium = .5;
-	Model1.calcium = .5;
-	Model1.phosphorus = .9;
-
-	Model2.name = "Model 2";
-	Model2.ammonium = 1.4;
-	Model2.magnesium = 1.2;
-	Model2.calcium = 1.8;
-	Model2.phosphorus = 1.9;
+// delay function in milliseconds
+void delay_ms(int ms) {
+    delay_us(ms * 1000); // micro to milli second conversion
 }
 
-void sensor_1(struct Models CurrentModel) {
-	if (ammonium < (CurrentModel).ammonium) {
-		//actuator.release()
-		//open_actuator_1();
-		//close_actuator_1();
-		ammonium += .5;
-		Serial.print("Ammonium Nutrient Level: ");
-		printDouble(ammonium, 100);
-		Serial.print("Ammonium ML Level: ");
-		printDouble((CurrentModel).ammonium, 10);
-		Serial.println("Release Ammonium.\n");
-	}
-	else {
-		Serial.print("Ammonium Nutrient Level: ");
-		printDouble(ammonium, 100);
-		Serial.print("Ammonium ML Level: ");
-		printDouble((CurrentModel).ammonium, 10);
-		Serial.println("Don't Release Ammonium.\n");
-	}
+void initialize() {
+    // set all ports to be digital, not analog
+    ANSELA = 0;
+    ANSELB = 0;
+    
+    // set on board LED as output
+    TRISAbits.TRISA0 = 0; 
+    PORTAbits.RA0 = 0;
+    
+    // input and output pins to Raspberry Pi
+    TRISAbits.TRISA2 = 1;   // input 1
+    TRISAbits.TRISA3 = 1;   // input 2
+    TRISBbits.TRISB4 = 0;   // output 1
+    TRISAbits.TRISA4 = 0;   // output 2
+    
+    PORTAbits.RA2 = 0;
+    PORTAbits.RA3 = 0;
+    PORTBbits.RB4 = 0;
+    PORTAbits.RA4 = 0;
+    
+    
+    // set ports B 6through B19 as inputs from buttons
+    TRISBbits.TRISB6 = 1;   // determines direction of motor rotation
+    TRISBbits.TRISB7 = 1;   // determines speed and movement on motor
+    TRISBbits.TRISB8 = 1;
+    TRISBbits.TRISB9 = 1;
+    PORTBbits.RB6 = 0;
+    PORTBbits.RB7 = 0;
+    PORTBbits.RB8 = 0;
+    PORTBbits.RB9 = 0;
+    
+    // set ports RB12 through RB15 as outputs for direction and drive
+    TRISBbits.TRISB12 = 0;
+    TRISBbits.TRISB13 = 0;
+    TRISBbits.TRISB14 = 0;
+    TRISBbits.TRISB15 = 0;
+    PORTBbits.RB12 = 0;
+    PORTBbits.RB13 = 0;
+    PORTBbits.RB14 = 0;
+    PORTBbits.RB15 = 0;
+    
+    // initialize all ports as 0
+    PORTA = 0;
+    PORTB = 0;
 }
 
-void sensor_2(struct Models CurrentModel) {
-	if (magnesium < (CurrentModel).magnesium) {
-		//actuator.release()
-		//open_actuator_2();
-		//close_actuator_1();
-		magnesium += .5;
-		Serial.print("Magnesium Nutrient Level: ");
-		printDouble(magnesium, 100);
-		Serial.print("Magnesium ML Level: ");
-		printDouble((CurrentModel).magnesium, 10);
-		printf("Release Magnesium.\n");
-		delay(1);
-	}
-	else {
-		Serial.print("Magnesium Nutrient Level: ");
-		printDouble(magnesium, 100);
-		Serial.print("Magnesium ML Level: ");
-		printDouble((CurrentModel).magnesium, 10);
-		printf("Don't Release Magnesium.\n");
-		delay(1);
-	}
+// function to flash on board led for 1 second
+void onboardled() {
+    // flashes on board led every second
+    PORTAbits.RA0 = 1;
+    delay_ms(1000);
+    PORTAbits.RA0 = 0;
+    delay_ms(1000);
 }
 
-// void sensor_3(struct Models CurrentModel) {
-// 	if (calcium < CurrentModel.calcium) {
-// 		//actuator.release()
-// 		//open_actuator_3();
-// 		//close_actuator_3();
-// 		calcium += .5;
-// 		printf("Nutrient Level: %f", calcium);
-// 		printf(" ML Level: %f", CurrentModel.calcium);
-// 		printf(" Release Magnesium.\n");
-// 	}
-// 	else {
-// 		printf("Nutrient Level: %f", calcium);
-// 		printf(" ML Level: %f", CurrentModel.calcium);
-// 		printf(" Don't Release Magnesium.\n");
-// 	}
-// }
-
-// void sensor_4(struct Models CurrentModel) {
-// 	if (phosphorus < CurrentModel.phosphorus) {
-// 		//actuator.release()
-// 		//open_actuator_4();
-// 		//close_actuator_4();
-// 		phosphorus += .5;
-// 		printf("Nutrient Level: %f", phosphorus);
-// 		printf(" ML Level: %f", CurrentModel.phosphorus);
-// 		printf(" Release Magnesium.\n");
-// 	}
-// 	else {
-// 		printf("Nutrient Level: %f", phosphorus);
-// 		printf(" ML Level: %f", CurrentModel.phosphorus);
-// 		printf(" Don't Release Magnesium.\n");
-// 	}
-// }
-
-void nutrient_absorption() {
-	ammonium -= .05;
-	magnesium -= .05;
-	calcium -= .05;
-	phosphorus -= .05;
+void motor1_pulse() {
+    for(int i = 0; i < (55); i++) {    // adjusted condition to rotate more/less
+        pulse1 = 1;
+        delay_ms(3);
+        pulse1 = 0;
+        delay_ms(3);
+    } 
 }
 
-void update_ML(int model) {
-	if (model == 0) {
-		CurrentModel = &Model1;
-	}
-	else {
-		CurrentModel = &Model2;
-	}
+void motor1_fulldrive(char direction) {
+    if(direction == cw) {
+       direction1 = 1;  // set motor to rotate in clockwise direction
+       motor1_pulse();
+    }
+    if(direction == ccw) {
+        direction1 = 0;  // set motor to rotate in clockwise direction
+        motor1_pulse();
+    }
 }
 
-void printDouble( double val, unsigned int precision){
-// prints val with number of decimal places determine by precision
-// NOTE: precision is 1 followed by the number of zeros for the desired number of decimial places
-// example: printDouble( 3.1415, 100); // prints 3.14 (two decimal places)
-
-    Serial.print (int(val));  //prints the int part
-    Serial.print("."); // print the decimal point
-    unsigned int frac;
-    if(val >= 0)
-      frac = (val - int(val)) * precision;
-    else
-       frac = (int(val)- val ) * precision;
-    int frac1 = frac;
-    while( frac1 /= 10 )
-        precision /= 10;
-    precision /= 10;
-    while(  precision /= 10)
-        Serial.print("0");
-
-    Serial.println(frac,DEC) ;
+void motor1_calib() {
+    if(button1_L) {
+            direction1 = cw;
+            while(button1_L) {
+                pulse1 = 1;
+                delay_ms(2);
+                pulse1 = 0;
+                delay_ms(2);
+            }
+        }
+    if(button1_R) {
+        direction1 = ccw;
+        while(button1_R) {
+            pulse1 = 1;
+            delay_ms(2);
+            pulse1 = 0;
+            delay_ms(2);
+        }
+    }
 }
+
+void motor2_pulse() {
+    for(int i = 0; i < (steps/4); i++) {
+        pulse2 = 1;
+        delay_ms(3);
+        pulse2 = 0;
+        delay_ms(3);
+    } 
+}
+
+void motor2_fulldrive(char direction) {
+    if(direction == cw) {
+       direction2 = 1;  // set motor to rotate in clockwise direction
+       motor2_pulse();
+    }
+    if(direction == ccw) {
+        direction2 = 0;  // set motor to rotate in clockwise direction
+        motor2_pulse();
+    }
+}
+
+void motor2_calib() {
+    if(button2_L) {
+            direction2 = cw;
+            while(button2_L) {
+                pulse2 = 1;
+                delay_ms(2);
+                pulse2 = 0;
+                delay_ms(2);
+            }
+        }
+    if(button2_R) {
+        direction2 = ccw;
+        while(button2_R) {
+            pulse2 = 1;
+            delay_ms(2);
+            pulse2 = 0;
+            delay_ms(2);
+        }
+    }
+}
+
+void calibration() {
+    if(button1_L || button1_R) {
+        motor1_calib();
+    }
+    if(button2_L || button2_R) {
+        motor2_calib();
+    }
+}
+
+int main ()
+{
+    /* Initialize all modules */
+    SYS_Initialize ( NULL );
+    
+    // initializing all pins
+    initialize(); 
+    
+    bool centered = false;
+    while(centered == false) {
+            board_led = 1;
+            calibration();
+            if(confirm) {
+                centered = true;
+                board_led = 0;
+                delay_ms(1000);
+                break;
+            }
+        }
+    
+    while ( true ) {
+        SYS_Tasks ( );
+        // use with communication_test.py 
+        /*
+        if(button1_L) {
+            output1 = 1;
+            delay_ms(1000);
+            output1 = 0;
+        }
+        if(button1_R) {
+            output2 = 1;
+            delay_ms(1000);
+            output2 = 0;
+        }
+        */ 
+        
+        if(input1) {
+            motor1_fulldrive(cw);
+            delay_ms(500);
+            output1 = 1;
+            delay_ms(2000);
+            output1 = 0;
+        }
+        
+        if(input2) {
+            motor2_fulldrive(cw);
+            delay_ms(500);
+            output2 = 1;
+            delay_ms(2000);
+            output2 = 0;
+        }
+        
+        /*
+        while(current1 < required1 || current2 < required2) {
+            if(current1 < required1 && current2 < required2) {
+                board_led = 1;
+                motor1_fulldrive(ccw);
+                delay_ms(1000);
+                motor2_fulldrive(cw);
+                current1++;
+                current2++;
+                board_led = 0;
+                delay_ms(1000);
+                continue;
+            }
+            // if one of the two nutrients is below the required levels
+            else if(current1 >= required1 || current2 >= required2) {
+                if(current1 < required1) { // if nutrient 1 is below required level
+                    board_led = 1;
+                    motor1_fulldrive(ccw); // dispense nutrient 1
+                    current1++; // increase nutrient 1 current level by 1
+                    board_led = 0;
+                    delay_ms(1000);
+                    continue; // restart loop
+                }
+                else if(current2 < required2) { // if nutrient 2 is below required level
+                    board_led = 1;
+                    motor2_fulldrive(cw); // dispense nutrient 2
+                    current2++; // increase nutrient 2 current level by 1
+                    board_led = 0;
+                    delay_ms(1000);
+                    continue; // restart loop
+                }
+            }
+        }
+        */ 
+        // reset everything back to 0
+        PORTA = 0;
+        PORTB = 0;
+    }
+    
+    
+    return ( EXIT_FAILURE );
+}
+
+
+/*******************************************************************************
+ End of File
+*/
+
